@@ -10,7 +10,7 @@ import LandingPage from './components/LandingPage';
 import Documentation from './components/Documentation';
 import SystemGuide from './components/SystemGuide';
 import useLocalStorage from './hooks/useLocalStorage';
-import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon } from './components/Icons';
+import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload } from './components/Icons';
 import { UserStats, WeekModule, StudyLog, User, Status, WeeklyScore, Notification, TaskItem, JournalEntry, CapstoneState, ReadinessDimensions, ReadinessDimension, Difficulty, DocEntry } from './types';
 
 // --- HELPERS ---
@@ -287,6 +287,60 @@ const App: React.FC = () => {
       localStorage.clear();
       window.location.reload();
     }
+  };
+
+  const handleExportData = () => {
+    const data = {
+      users,
+      modules,
+      logs,
+      scores,
+      journalEntries,
+      capstoneState,
+      docEntries,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `learningops-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        // Validate basic structure
+        if (data.users && data.modules) {
+          if(confirm(`Import backup from ${data.timestamp}? This will overwrite current data.`)) {
+            setUsers(data.users);
+            setModules(data.modules);
+            setLogs(data.logs || []);
+            setScores(data.scores || []);
+            setJournalEntries(data.journalEntries || []);
+            setCapstoneState(data.capstoneState || []);
+            setDocEntries(data.docEntries || []);
+            alert('Data imported successfully!');
+            setIsSettingsOpen(false);
+          }
+        } else {
+          alert('Invalid file format.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse file.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   // --- LOGIC HELPERS ---
@@ -569,41 +623,59 @@ const App: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
               <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-200 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Manage Team Members</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Workspace Settings</h3>
                   <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
                 </div>
 
-                <div className="space-y-4">
-                  {users.map((u, idx) => (
-                      <div key={u.id} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${u.color}`}>
-                            {u.avatarInitials}
+                <div className="space-y-6">
+                  {/* Data Sync Section - NEW */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Data Sync (Collaborate)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                          onClick={handleExportData}
+                          className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
+                      >
+                        <Download className="w-5 h-5 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Export Backup</span>
+                      </button>
+                      <label className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer group">
+                        <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Import Data</span>
+                        <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2">
+                      Use this to share progress between computers. Export from one, import to the other.
+                    </p>
+                  </div>
+
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Team Members</h4>
+                    <div className="space-y-4">
+                      {users.map((u, idx) => (
+                          <div key={u.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${u.color}`}>
+                              {u.avatarInitials}
+                            </div>
+                            <input
+                                type="text"
+                                value={u.name}
+                                onChange={(e) => {
+                                  const newUsers = [...users];
+                                  newUsers[idx] = {
+                                    ...u,
+                                    name: e.target.value,
+                                    avatarInitials: e.target.value.substring(0, 2).toUpperCase()
+                                  };
+                                  setUsers(newUsers);
+                                }}
+                                className="flex-1 px-2 py-1 border-b border-transparent focus:border-indigo-500 bg-transparent text-sm text-slate-900 dark:text-white outline-none"
+                            />
                           </div>
-                          <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">{u.role}</p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">ID: {u.id}</p>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
-                          <input
-                              type="text"
-                              value={u.name}
-                              onChange={(e) => {
-                                const newUsers = [...users];
-                                newUsers[idx] = {
-                                  ...u,
-                                  name: e.target.value,
-                                  avatarInitials: e.target.value.substring(0, 2).toUpperCase()
-                                };
-                                setUsers(newUsers);
-                              }}
-                              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                          />
-                        </div>
-                      </div>
-                  ))}
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-6 flex justify-end">
                   <button
