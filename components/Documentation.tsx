@@ -427,5 +427,4 @@ const Documentation: React.FC<DocumentationProps> = ({ entries, setEntries, curr
     </div>
   );
 };
-
 export default Documentation;
