@@ -248,21 +248,21 @@ const App: React.FC = () => {
   // --- STATE ---
   const [showLanding, setShowLanding] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
-  
+
   // Theme State
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('lo_theme', 'light');
 
   // Persisted Data
   const [users, setUsers] = useLocalStorage<User[]>('lo_users', INITIAL_USERS);
   const [currentUserId, setCurrentUserId] = useLocalStorage<string>('lo_current_user_id', INITIAL_USERS[0].id);
-  
+
   const [modules, setModules] = useLocalStorage<WeekModule[]>('lo_modules', INITIAL_MODULES);
   const [logs, setLogs] = useLocalStorage<StudyLog[]>('lo_logs', MOCK_LOGS);
   const [scores, setScores] = useLocalStorage<WeeklyScore[]>('lo_scores', MOCK_SCORES);
   const [journalEntries, setJournalEntries] = useLocalStorage<JournalEntry[]>('lo_journal', MOCK_JOURNAL);
   const [capstoneState, setCapstoneState] = useLocalStorage<CapstoneState[]>('lo_capstone', INITIAL_CAPSTONE);
   const [docEntries, setDocEntries] = useLocalStorage<DocEntry[]>('lo_documentation', INITIAL_DOC_ENTRIES);
-  
+
   // Transient
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
@@ -292,9 +292,9 @@ const App: React.FC = () => {
   // --- LOGIC HELPERS ---
   // Calculates the current active module based on start date
   const getCurrentModule = () => {
-      const today = new Date().toISOString().split('T')[0];
-      const active = modules.filter(m => m.startDate && m.startDate <= today);
-      return active.length > 0 ? active[active.length - 1] : modules[0];
+    const today = new Date().toISOString().split('T')[0];
+    const active = modules.filter(m => m.startDate && m.startDate <= today);
+    return active.length > 0 ? active[active.length - 1] : modules[0];
   };
 
   const currentModule = getCurrentModule();
@@ -302,7 +302,7 @@ const App: React.FC = () => {
   // --- RULES ENGINE ---
   useEffect(() => {
     runAccountabilityRules();
-  }, [modules, journalEntries, currentUser]); 
+  }, [modules, journalEntries, currentUser]);
 
   const runAccountabilityRules = () => {
     const today = new Date();
@@ -327,7 +327,7 @@ const App: React.FC = () => {
           // Auto-generate Compensation Task
           const compId = `comp-${item.id}`;
           const alreadyExists = module.items.find((i: TaskItem) => i.id === compId);
-          
+
           if (!alreadyExists) {
             module.items.push({
               id: compId,
@@ -335,7 +335,7 @@ const App: React.FC = () => {
               type: 'Compensation',
               status: Status.NOT_STARTED,
               ownerId: item.ownerId,
-              dueDate: getRelativeDate(1), 
+              dueDate: getRelativeDate(1),
               originalTaskId: item.id
             });
             modulesChanged = true;
@@ -363,19 +363,19 @@ const App: React.FC = () => {
     });
 
     if (foundLateTasks.length > 0) {
-        newNotifications.push({
-            id: `info-comp-${todayStr}`,
-            type: 'warning',
-            title: 'Compensation Tasks Active',
-            message: `${foundLateTasks.length} tasks overdue. Remedial work assigned.`,
-            timestamp: new Date().toISOString()
-        });
+      newNotifications.push({
+        id: `info-comp-${todayStr}`,
+        type: 'warning',
+        title: 'Compensation Tasks Active',
+        message: `${foundLateTasks.length} tasks overdue. Remedial work assigned.`,
+        timestamp: new Date().toISOString()
+      });
     }
 
     if (modulesChanged) {
       setModules(updatedModules);
     }
-    
+
     setNotifications(newNotifications);
     setLateTasks(foundLateTasks);
     setUpcomingTasks(foundUpcomingTasks);
@@ -384,30 +384,30 @@ const App: React.FC = () => {
   const calculateStats = (userId: string): UserStats => {
     const userLogs = logs.filter(l => l.userId === userId);
     const totalHours = userLogs.reduce((acc, l) => acc + l.hours, 0);
-    
+
     let completedTasks = 0;
     let totalAssignedTasks = 0;
-    
+
     modules.forEach(m => {
-        m.items.forEach(t => {
-            if (t.ownerId === userId) {
-                totalAssignedTasks++;
-                if (t.status === Status.COMPLETED) completedTasks++;
-            }
-        });
+      m.items.forEach(t => {
+        if (t.ownerId === userId) {
+          totalAssignedTasks++;
+          if (t.status === Status.COMPLETED) completedTasks++;
+        }
+      });
     });
 
     return {
       totalHours,
       completedTasks,
-      currentStreak: userId === 'collins' ? 5 : 2, 
+      currentStreak: userId === 'collins' ? 5 : 2,
       completionRate: totalAssignedTasks === 0 ? 0 : Math.round((completedTasks / totalAssignedTasks) * 100)
     };
   };
 
   const stats = {
-      collins: calculateStats('collins'),
-      sophia: calculateStats('sophia')
+    collins: calculateStats('collins'),
+    sophia: calculateStats('sophia')
   };
 
   if (showLanding) {
@@ -415,54 +415,55 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
-      {/* Sidebar */}
-      <aside className="w-20 lg:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col fixed h-full z-10 transition-all duration-300 border-r border-slate-800">
-        <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => setShowLanding(true)}>
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
-            LO
-          </div>
-          <span className="font-bold text-lg hidden lg:block tracking-tight">LearningOps</span>
-        </div>
-
-        <nav className="flex-1 px-4 space-y-2 mt-6">
-          <NavButton active={activeTab === Tab.DASHBOARD} onClick={() => setActiveTab(Tab.DASHBOARD)} icon={LayoutDashboard} label="Dashboard" />
-          <NavButton active={activeTab === Tab.SYLLABUS} onClick={() => setActiveTab(Tab.SYLLABUS)} icon={BookOpen} label="Roadmap" />
-          <NavButton active={activeTab === Tab.TRACKER} onClick={() => setActiveTab(Tab.TRACKER)} icon={Activity} label="Tracker" />
-          <NavButton active={activeTab === Tab.SCORECARD} onClick={() => setActiveTab(Tab.SCORECARD)} icon={Target} label="Scorecard" />
-          <NavButton active={activeTab === Tab.JOURNAL} onClick={() => setActiveTab(Tab.JOURNAL)} icon={Notebook} label="Journal" />
-          <NavButton active={activeTab === Tab.CAPSTONE} onClick={() => setActiveTab(Tab.CAPSTONE)} icon={Briefcase} label="Capstone" />
-          <NavButton active={activeTab === Tab.DOCUMENTATION} onClick={() => setActiveTab(Tab.DOCUMENTATION)} icon={FileText} label="Evidence Log" />
-          
-          <div className="pt-4 mt-4 border-t border-slate-800">
-             <NavButton active={activeTab === Tab.GUIDE} onClick={() => setActiveTab(Tab.GUIDE)} icon={HelpCircle} label="System Guide" />
-          </div>
-        </nav>
-
-        <div className="p-4 hidden lg:block border-t border-slate-800">
-          <div className="bg-slate-800 rounded-xl p-3 mb-3">
-             <div className="flex justify-between items-center">
-                 <span className="text-[10px] font-bold text-slate-400 uppercase">Theme</span>
-                 <button 
-                   onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                   className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
-                 >
-                    {theme === 'light' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                 </button>
-             </div>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+        {/* Sidebar - Updated with scroll and responsive footer */}
+        <aside className="w-20 lg:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col fixed inset-y-0 z-10 transition-all duration-300 border-r border-slate-800 overflow-y-auto">
+          <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => setShowLanding(true)}>
+            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+              LO
+            </div>
+            <span className="font-bold text-lg hidden lg:block tracking-tight">LearningOps</span>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-3">
-            <div className="flex justify-between items-center mb-2">
+          <nav className="flex-1 px-4 space-y-2 mt-6">
+            <NavButton active={activeTab === Tab.DASHBOARD} onClick={() => setActiveTab(Tab.DASHBOARD)} icon={LayoutDashboard} label="Dashboard" />
+            <NavButton active={activeTab === Tab.SYLLABUS} onClick={() => setActiveTab(Tab.SYLLABUS)} icon={BookOpen} label="Roadmap" />
+            <NavButton active={activeTab === Tab.TRACKER} onClick={() => setActiveTab(Tab.TRACKER)} icon={Activity} label="Tracker" />
+            <NavButton active={activeTab === Tab.SCORECARD} onClick={() => setActiveTab(Tab.SCORECARD)} icon={Target} label="Scorecard" />
+            <NavButton active={activeTab === Tab.JOURNAL} onClick={() => setActiveTab(Tab.JOURNAL)} icon={Notebook} label="Journal" />
+            <NavButton active={activeTab === Tab.CAPSTONE} onClick={() => setActiveTab(Tab.CAPSTONE)} icon={Briefcase} label="Capstone" />
+            <NavButton active={activeTab === Tab.DOCUMENTATION} onClick={() => setActiveTab(Tab.DOCUMENTATION)} icon={FileText} label="Evidence Log" />
+
+            <div className="pt-4 mt-4 border-t border-slate-800">
+              <NavButton active={activeTab === Tab.GUIDE} onClick={() => setActiveTab(Tab.GUIDE)} icon={HelpCircle} label="System Guide" />
+            </div>
+          </nav>
+
+          {/* Bottom Profile Section - Now visible and adapted for mobile */}
+          <div className="p-4 border-t border-slate-800">
+            <div className="bg-slate-800 rounded-xl p-3 mb-3 flex flex-col lg:block items-center">
+              <div className="flex justify-between items-center w-full">
+                <span className="text-[10px] font-bold text-slate-400 uppercase hidden lg:block">Theme</span>
+                <button
+                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                    className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors w-full lg:w-auto flex justify-center"
+                >
+                  {theme === 'light' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-slate-800 rounded-xl p-3">
+              <div className="hidden lg:flex justify-between items-center mb-2">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase">Switch Profile</h4>
-                <button 
+                <button
                     onClick={() => setIsSettingsOpen(true)}
                     className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
                 >
-                    <Settings className="w-3 h-3" /> Edit
+                  <Settings className="w-3 h-3" /> Edit
                 </button>
-            </div>
-            <div className="flex gap-2">
+              </div>
+              <div className="flex flex-col lg:flex-row gap-2">
                 {users.map(user => (
                     <button
                         key={user.id}
@@ -470,166 +471,167 @@ const App: React.FC = () => {
                         className={`flex-1 p-2 rounded-lg flex flex-col items-center justify-center transition-all ${
                             currentUser.id === user.id ? 'bg-indigo-600 shadow-md' : 'bg-slate-700 hover:bg-slate-600'
                         }`}
+                        title={user.name}
                     >
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold mb-1 ${
-                            currentUser.id === user.id ? 'bg-white text-indigo-600' : 'bg-slate-500 text-slate-200'
-                        }`}>
-                            {user.avatarInitials}
-                        </div>
-                        <span className="text-[10px] font-medium truncate w-full">{user.name}</span>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          currentUser.id === user.id ? 'bg-white text-indigo-600' : 'bg-slate-500 text-slate-200'
+                      } ${currentUser.id !== user.id ? 'mb-0' : 'mb-1 lg:mb-1'}`}>
+                        {user.avatarInitials}
+                      </div>
+                      <span className="text-[10px] font-medium truncate w-full hidden lg:block">{user.name}</span>
                     </button>
                 ))}
-            </div>
-            <div className="mt-3 pt-3 border-t border-slate-700">
-                 <p className="text-xs text-slate-300 font-medium">{currentUser.name}</p>
-                 <p className="text-[10px] text-slate-500">{currentUser.role}</p>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-700 hidden lg:block">
+                <p className="text-xs text-slate-300 font-medium">{currentUser.name}</p>
+                <p className="text-[10px] text-slate-500">{currentUser.role}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-20 lg:ml-64 p-8 overflow-y-auto relative h-screen">
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {activeTab === Tab.DASHBOARD && 'Performance Overview'}
-              {activeTab === Tab.SYLLABUS && '14-Week Roadmap'}
-              {activeTab === Tab.TRACKER && 'Activity Log'}
-              {activeTab === Tab.SCORECARD && 'Success Scorecard'}
-              {activeTab === Tab.JOURNAL && 'Learning Journal'}
-              {activeTab === Tab.CAPSTONE && 'Capstone & Job Readiness'}
-              {activeTab === Tab.DOCUMENTATION && 'Documentation & Evidence'}
-              {activeTab === Tab.GUIDE && 'System Documentation'}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+        {/* Main Content */}
+        <main className="flex-1 ml-20 lg:ml-64 p-8 overflow-y-auto relative h-screen">
+          <header className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {activeTab === Tab.DASHBOARD && 'Performance Overview'}
+                {activeTab === Tab.SYLLABUS && '14-Week Roadmap'}
+                {activeTab === Tab.TRACKER && 'Activity Log'}
+                {activeTab === Tab.SCORECARD && 'Success Scorecard'}
+                {activeTab === Tab.JOURNAL && 'Learning Journal'}
+                {activeTab === Tab.CAPSTONE && 'Capstone & Job Readiness'}
+                {activeTab === Tab.DOCUMENTATION && 'Documentation & Evidence'}
+                {activeTab === Tab.GUIDE && 'System Documentation'}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                 Collaborative Workspace • <span className="text-indigo-600 dark:text-indigo-400 font-medium">Viewing as {currentUser.name}</span>
-            </p>
-          </div>
-          
-          <button 
-            onClick={() => setIsNotifPanelOpen(true)}
-            className="relative p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
-          >
-            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            {(notifications.length > 0 || lateTasks.length > 0) && (
-                <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-            )}
-          </button>
-        </header>
+              </p>
+            </div>
 
-        <div className="max-w-7xl mx-auto">
+            <button
+                onClick={() => setIsNotifPanelOpen(true)}
+                className="relative p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            >
+              <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              {(notifications.length > 0 || lateTasks.length > 0) && (
+                  <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800"></span>
+              )}
+            </button>
+          </header>
+
+          <div className="max-w-7xl mx-auto">
             {activeTab === Tab.DASHBOARD && (
-            <Dashboard currentUser={currentUser} users={users} stats={stats} modules={modules} scores={scores} />
+                <Dashboard currentUser={currentUser} users={users} stats={stats} modules={modules} scores={scores} />
             )}
-            
+
             {activeTab === Tab.SYLLABUS && (
-            <Syllabus modules={modules} setModules={setModules} currentUser={currentUser} users={users} />
+                <Syllabus modules={modules} setModules={setModules} currentUser={currentUser} users={users} />
             )}
-            
+
             {activeTab === Tab.TRACKER && (
-            <Tracker logs={logs} setLogs={setLogs} currentModule={currentModule} currentUser={currentUser} />
+                <Tracker logs={logs} setLogs={setLogs} currentModule={currentModule} currentUser={currentUser} />
             )}
 
             {activeTab === Tab.SCORECARD && (
-            <Scorecard currentUser={currentUser} users={users} modules={modules} scores={scores} setScores={setScores} />
+                <Scorecard currentUser={currentUser} users={users} modules={modules} scores={scores} setScores={setScores} />
             )}
 
             {activeTab === Tab.JOURNAL && (
-            <Journal entries={journalEntries} setEntries={setJournalEntries} currentUser={currentUser} users={users} modules={modules} />
+                <Journal entries={journalEntries} setEntries={setJournalEntries} currentUser={currentUser} users={users} modules={modules} />
             )}
 
             {activeTab === Tab.CAPSTONE && (
-            <CapstoneReadiness currentUser={currentUser} capstoneState={capstoneState} setCapstoneState={setCapstoneState} docEntries={docEntries} />
+                <CapstoneReadiness currentUser={currentUser} capstoneState={capstoneState} setCapstoneState={setCapstoneState} docEntries={docEntries} />
             )}
 
             {activeTab === Tab.DOCUMENTATION && (
-            <Documentation entries={docEntries} setEntries={setDocEntries} currentUser={currentUser} />
+                <Documentation entries={docEntries} setEntries={setDocEntries} currentUser={currentUser} />
             )}
 
             {activeTab === Tab.GUIDE && (
-            <SystemGuide />
+                <SystemGuide />
             )}
-        </div>
-      </main>
-
-      <NotificationPanel 
-        isOpen={isNotifPanelOpen}
-        onClose={() => setIsNotifPanelOpen(false)}
-        notifications={notifications}
-        lateTasks={lateTasks}
-        upcomingTasks={upcomingTasks}
-        users={users}
-      />
-
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-200 dark:border-slate-700">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Manage Team Members</h3>
-                <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
-            </div>
-            
-            <div className="space-y-4">
-              {users.map((u, idx) => (
-                <div key={u.id} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-                   <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${u.color}`}>
-                         {u.avatarInitials}
-                      </div>
-                      <div>
-                         <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">{u.role}</p>
-                         <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">ID: {u.id}</p>
-                      </div>
-                   </div>
-                   <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
-                      <input 
-                        type="text" 
-                        value={u.name}
-                        onChange={(e) => {
-                           const newUsers = [...users];
-                           newUsers[idx] = { 
-                              ...u, 
-                              name: e.target.value,
-                              avatarInitials: e.target.value.substring(0, 2).toUpperCase()
-                           };
-                           setUsers(newUsers);
-                        }}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                      />
-                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button 
-                onClick={() => setIsSettingsOpen(false)}
-                className="px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
-              >
-                Done
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-    </div>
+        </main>
+
+        <NotificationPanel
+            isOpen={isNotifPanelOpen}
+            onClose={() => setIsNotifPanelOpen(false)}
+            notifications={notifications}
+            lateTasks={lateTasks}
+            upcomingTasks={upcomingTasks}
+            users={users}
+        />
+
+        {/* Settings Modal */}
+        {isSettingsOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-200 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Manage Team Members</h3>
+                  <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
+                </div>
+
+                <div className="space-y-4">
+                  {users.map((u, idx) => (
+                      <div key={u.id} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${u.color}`}>
+                            {u.avatarInitials}
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">{u.role}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">ID: {u.id}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
+                          <input
+                              type="text"
+                              value={u.name}
+                              onChange={(e) => {
+                                const newUsers = [...users];
+                                newUsers[idx] = {
+                                  ...u,
+                                  name: e.target.value,
+                                  avatarInitials: e.target.value.substring(0, 2).toUpperCase()
+                                };
+                                setUsers(newUsers);
+                              }}
+                              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                      onClick={() => setIsSettingsOpen(false)}
+                      className="px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
+      </div>
   );
 };
 
 const NavButton = ({ active, onClick, icon: Icon, label }: any) => (
-  <button 
-    onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-      active 
-        ? 'bg-indigo-600 text-white shadow-md' 
-        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-    }`}
-  >
-    <Icon className="w-5 h-5" />
-    <span className="hidden lg:block font-medium">{label}</span>
-  </button>
+    <button
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+            active
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+        }`}
+    >
+      <Icon className="w-5 h-5" />
+      <span className="hidden lg:block font-medium">{label}</span>
+    </button>
 );
 
 export default App;
