@@ -92,7 +92,7 @@ const Tracker: React.FC<TrackerProps> = ({ logs, setLogs, currentModule, current
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       {/* Log Entry Form */}
-      <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-6 rounded border border-slate-200 dark:border-slate-700 h-fit sticky top-6 relative transition-colors">
+      <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-6 rounded border border-slate-200 dark:border-slate-700 h-fit lg:sticky top-6 relative transition-colors">
         <div className="absolute top-6 right-6 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
              <LinkIcon className="w-3 h-3" /> Auto-Save
         </div>

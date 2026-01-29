@@ -77,4 +77,4 @@ src/
 
 ---
 
-*Designed and engineered by [Your Name].*
+*Designed and engineered by Uwabor Collins*
