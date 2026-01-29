@@ -165,42 +165,11 @@ const INITIAL_MODULES: WeekModule[] = [
   }
 ];
 
-const MOCK_LOGS: StudyLog[] = [
-  { id: '1', date: getRelativeDate(-20), hours: 3.5, notes: 'Day 1: Intro to Python. Finished articles.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '2', date: getRelativeDate(-19), hours: 2.0, notes: 'Day 2: Control flow practice. Logic is key.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '3', date: getRelativeDate(-14), hours: 4.0, notes: 'Day 7 Project: Advanced concepts applied. Tricky.', difficulty: Difficulty.HARD, userId: 'collins' },
-  { id: '4', date: getRelativeDate(-10), hours: 2.5, notes: 'Day 11: CLT theory reading.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '5', date: getRelativeDate(-6), hours: 3.0, notes: 'Day 15: NumPy basics. Arrays are fast.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '6', date: getRelativeDate(-3), hours: 3.5, notes: 'Day 18: Pandas operations. Merging is powerful.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-];
+const MOCK_LOGS: StudyLog[] = [];
 
-const MOCK_SCORES: WeeklyScore[] = [
-  // Week 1: Strong start
-  { id: 's1-c', weekId: 1, userId: 'collins', mastery: 4, output: 5, consistency: 4, collaboration: 5, total: 18, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  { id: 's1-s', weekId: 1, userId: 'sophia', mastery: 3, output: 4, consistency: 4, collaboration: 5, total: 16, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  // Week 2: Dip in consistency
-  { id: 's2-c', weekId: 2, userId: 'collins', mastery: 3, output: 3, consistency: 2, collaboration: 4, total: 12, status: 'Needs Adjustment', dateLogged: getRelativeDate(-7) },
-  { id: 's2-s', weekId: 2, userId: 'sophia', mastery: 2, output: 3, consistency: 2, collaboration: 3, total: 10, status: 'Intervention Required', dateLogged: getRelativeDate(-7) }
-];
+const MOCK_SCORES: WeeklyScore[] = [];
 
-const MOCK_JOURNAL: JournalEntry[] = [
-  {
-    id: 'j1', date: getRelativeDate(-10), weekId: 2, userId: 'collins', type: 'Daily',
-    learned: 'Hypothesis testing requires distinct null/alt definitions.',
-    confused: 'P-value interpretation.',
-    fixed: 'Read extra StatQuest article.',
-    takeaway: 'Low p-value = Reject Null.',
-    tags: ['Stats', 'Hypothesis']
-  },
-  {
-    id: 'j2', date: getRelativeDate(-2), weekId: 3, userId: 'collins', type: 'Daily',
-    learned: 'Pandas merge vs join.',
-    confused: 'Index alignment issues.',
-    fixed: 'Reset index before merging.',
-    takeaway: 'Merge on columns, Join on index.',
-    tags: ['Pandas']
-  }
-];
+const MOCK_JOURNAL: JournalEntry[] = [];
 
 const INITIAL_CAPSTONE: CapstoneState[] = INITIAL_USERS.map(u => ({
   userId: u.id,
