@@ -34,13 +34,13 @@ const INITIAL_MODULES: WeekModule[] = [
     theme: "Foundations & Syntax",
     startDate: getRelativeDate(-21),
     items: [
-      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python (5 Articles, 5 Problems, 18 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-20) },
-      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow (3 Articles, 6 Problems, 13 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-19) },
-      { id: "w1-d3", title: "Day 3: Loops and Functions (3 Articles, 5 Problems, 14 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-18) },
-      { id: "w1-d4", title: "Day 4: String and List (2 Articles, 11 Problems, 15 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-17) },
-      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set (3 Articles, 4 Problems, 15 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-16) },
-      { id: "w1-d6", title: "Day 6: Python Collections (2 Articles, 3 Problems, 15 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-15) },
-      { id: "w1-d7", title: "Day 7: Advanced Python Concepts (6 Articles, 5 Problems, 15 MCQs)", type: "Project", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-14) },
+      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python (5 Articles, 5 Problems, 18 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-20) },
+      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow (3 Articles, 6 Problems, 13 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-19) },
+      { id: "w1-d3", title: "Day 3: Loops and Functions (3 Articles, 5 Problems, 14 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-18) },
+      { id: "w1-d4", title: "Day 4: String and List (2 Articles, 11 Problems, 15 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-17) },
+      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set (3 Articles, 4 Problems, 15 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-16) },
+      { id: "w1-d6", title: "Day 6: Python Collections (2 Articles, 3 Problems, 15 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-15) },
+      { id: "w1-d7", title: "Day 7: Advanced Python Concepts (6 Articles, 5 Problems, 15 MCQs)", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-14) },
     ]
   },
   {
@@ -49,13 +49,13 @@ const INITIAL_MODULES: WeekModule[] = [
     theme: "Statistics & Probability",
     startDate: getRelativeDate(-14),
     items: [
-      { id: "w2-d8", title: "Day 8: Introduction to Statistics (7 Articles, 10 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-13) },
-      { id: "w2-d9", title: "Day 9: Probability & Distributions (8 Articles, 12 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-12) },
-      { id: "w2-d10", title: "Day 10: Understanding Data Relationships (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-11) },
-      { id: "w2-d11", title: "Day 11: CLT & Hypothesis Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-10) },
-      { id: "w2-d12", title: "Day 12: Parametric Testing Techniques (5 Articles, 15 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-9) },
-      { id: "w2-d13", title: "Day 13: Non-Parametric Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-8) },
-      { id: "w2-d14", title: "Day 14: Data Skewness Detection (1 Article, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-7) },
+      { id: "w2-d8", title: "Day 8: Introduction to Statistics (7 Articles, 10 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-13) },
+      { id: "w2-d9", title: "Day 9: Probability & Distributions (8 Articles, 12 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-12) },
+      { id: "w2-d10", title: "Day 10: Understanding Data Relationships (3 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-11) },
+      { id: "w2-d11", title: "Day 11: CLT & Hypothesis Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-10) },
+      { id: "w2-d12", title: "Day 12: Parametric Testing Techniques (5 Articles, 15 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-9) },
+      { id: "w2-d13", title: "Day 13: Non-Parametric Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-8) },
+      { id: "w2-d14", title: "Day 14: Data Skewness Detection (1 Article, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-7) },
     ]
   },
   {
@@ -64,13 +64,13 @@ const INITIAL_MODULES: WeekModule[] = [
     theme: "Data Manipulation",
     startDate: getRelativeDate(-7),
     items: [
-      { id: "w3-d15", title: "Day 15: Introduction to NumPy (3 Articles, 14 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-6) },
-      { id: "w3-d16", title: "Day 16: Introduction to Pandas (4 Articles, 13 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-5) },
-      { id: "w3-d17", title: "Day 17: Data Inspection in Pandas (5 Articles, 13 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-4) },
-      { id: "w3-d18", title: "Day 18: Pandas Advanced Operations (7 Articles, 20 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-3) },
-      { id: "w3-d19", title: "Day 19: Missing Data Handling (1 Article, 6 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-2) },
-      { id: "w3-d20", title: "Day 20: Outlier Detection (3 Articles, 12 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-1) },
-      { id: "w3-d21", title: "Day 21: Duplicate Data Handling (3 Articles, 10 Problems, 8 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(0) },
+      { id: "w3-d15", title: "Day 15: Introduction to NumPy (3 Articles, 14 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-6) },
+      { id: "w3-d16", title: "Day 16: Introduction to Pandas (4 Articles, 13 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-5) },
+      { id: "w3-d17", title: "Day 17: Data Inspection in Pandas (5 Articles, 13 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-4) },
+      { id: "w3-d18", title: "Day 18: Pandas Advanced Operations (7 Articles, 20 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-3) },
+      { id: "w3-d19", title: "Day 19: Missing Data Handling (1 Article, 6 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(-2) },
+      { id: "w3-d20", title: "Day 20: Outlier Detection (3 Articles, 12 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(-1) },
+      { id: "w3-d21", title: "Day 21: Duplicate Data Handling (3 Articles, 10 Problems, 8 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(0) },
     ]
   },
   {
@@ -79,7 +79,7 @@ const INITIAL_MODULES: WeekModule[] = [
     theme: "Matplotlib & Seaborn",
     startDate: getRelativeDate(0),
     items: [
-      { id: "w4-d22", title: "Day 22: Matplotlib Visualization (1 Article, 7 MCQs)", type: "Topic", status: Status.IN_PROGRESS, ownerId: "sophia", dueDate: getRelativeDate(1) },
+      { id: "w4-d22", title: "Day 22: Matplotlib Visualization (1 Article, 7 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(1) },
       { id: "w4-d23", title: "Day 23: Seaborn Visualization (1 Article, 5 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(2) },
       { id: "w4-d24", title: "Day 24: Interactive Viz with Plotly (1 Article, 7 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(3) },
       { id: "w4-d25", title: "Day 25: Correlation Matrix & Heatmaps (1 Article, 5 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(4) },
@@ -165,42 +165,11 @@ const INITIAL_MODULES: WeekModule[] = [
   }
 ];
 
-const MOCK_LOGS: StudyLog[] = [
-  { id: '1', date: getRelativeDate(-20), hours: 3.5, notes: 'Day 1: Intro to Python. Finished articles.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '2', date: getRelativeDate(-19), hours: 2.0, notes: 'Day 2: Control flow practice. Logic is key.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '3', date: getRelativeDate(-14), hours: 4.0, notes: 'Day 7 Project: Advanced concepts applied. Tricky.', difficulty: Difficulty.HARD, userId: 'collins' },
-  { id: '4', date: getRelativeDate(-10), hours: 2.5, notes: 'Day 11: CLT theory reading.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '5', date: getRelativeDate(-6), hours: 3.0, notes: 'Day 15: NumPy basics. Arrays are fast.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '6', date: getRelativeDate(-3), hours: 3.5, notes: 'Day 18: Pandas operations. Merging is powerful.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-];
+const MOCK_LOGS: StudyLog[] = [];
 
-const MOCK_SCORES: WeeklyScore[] = [
-  // Week 1: Strong start
-  { id: 's1-c', weekId: 1, userId: 'collins', mastery: 4, output: 5, consistency: 4, collaboration: 5, total: 18, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  { id: 's1-s', weekId: 1, userId: 'sophia', mastery: 3, output: 4, consistency: 4, collaboration: 5, total: 16, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  // Week 2: Dip in consistency
-  { id: 's2-c', weekId: 2, userId: 'collins', mastery: 3, output: 3, consistency: 2, collaboration: 4, total: 12, status: 'Needs Adjustment', dateLogged: getRelativeDate(-7) },
-  { id: 's2-s', weekId: 2, userId: 'sophia', mastery: 2, output: 3, consistency: 2, collaboration: 3, total: 10, status: 'Intervention Required', dateLogged: getRelativeDate(-7) }
-];
+const MOCK_SCORES: WeeklyScore[] = [];
 
-const MOCK_JOURNAL: JournalEntry[] = [
-  {
-    id: 'j1', date: getRelativeDate(-10), weekId: 2, userId: 'collins', type: 'Daily',
-    learned: 'Hypothesis testing requires distinct null/alt definitions.',
-    confused: 'P-value interpretation.',
-    fixed: 'Read extra StatQuest article.',
-    takeaway: 'Low p-value = Reject Null.',
-    tags: ['Stats', 'Hypothesis']
-  },
-  {
-    id: 'j2', date: getRelativeDate(-2), weekId: 3, userId: 'collins', type: 'Daily',
-    learned: 'Pandas merge vs join.',
-    confused: 'Index alignment issues.',
-    fixed: 'Reset index before merging.',
-    takeaway: 'Merge on columns, Join on index.',
-    tags: ['Pandas']
-  }
-];
+const MOCK_JOURNAL: JournalEntry[] = [];
 
 const INITIAL_CAPSTONE: CapstoneState[] = INITIAL_USERS.map(u => ({
   userId: u.id,
