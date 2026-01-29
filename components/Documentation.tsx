@@ -53,6 +53,12 @@ const Documentation: React.FC<DocumentationProps> = ({ entries, setEntries, curr
     setEvidenceLinks(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const handleDeleteEntry = (id: string) => {
+    if (confirm('Are you sure you want to delete this documentation entry? This affects your Capstone Readiness score.')) {
+        setEntries(prev => prev.filter(e => e.id !== id));
+    }
+  };
+
   const toggleDim = (dim: ReadinessDimension) => {
     if (selectedDims.includes(dim)) {
       setSelectedDims(selectedDims.filter(d => d !== dim));
@@ -374,10 +380,17 @@ const Documentation: React.FC<DocumentationProps> = ({ entries, setEntries, curr
                       </div>
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white">{entry.title}</h3>
                    </div>
-                   <div className="flex flex-col items-end gap-2">
+                   <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
                       <span className={`px-3 py-1 text-[10px] font-bold uppercase rounded border ${getStatusColor(entry.status)}`}>
                          {entry.status}
                       </span>
+                      <button 
+                         onClick={() => handleDeleteEntry(entry.id)} 
+                         className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                         title="Delete Entry"
+                      >
+                         <Trash className="w-4 h-4" />
+                      </button>
                    </div>
                 </div>
 
