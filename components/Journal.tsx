@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { JournalEntry, User, WeekModule } from '../types';
-import { LinkIcon, HelpCircle } from './Icons';
+import { LinkIcon, HelpCircle, Edit } from './Icons';
 import { SimpleMarkdown } from './SimpleMarkdown';
 import useLocalStorage from '../hooks/useLocalStorage';
 
@@ -16,6 +16,7 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWeekFilter, setSelectedWeekFilter] = useState<number | 'All'>('All');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State with Auto-Save Persistence
   const [entryType, setEntryType] = useLocalStorage<'Daily' | 'Weekly'>('draft_journal_type', 'Daily');
@@ -41,28 +42,70 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newEntry: JournalEntry = {
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      weekId: selectedWeek,
-      userId: currentUser.id,
-      type: entryType,
-      learned,
-      confused,
-      fixed,
-      takeaway: '', // Deprecated field
-      tags: tags.split(',').map(t => t.trim()).filter(t => t !== '')
-    };
+    if (editingId) {
+      // Update existing entry
+      setEntries(prev => prev.map(entry => {
+        if (entry.id === editingId) {
+          return {
+            ...entry,
+            weekId: selectedWeek,
+            type: entryType,
+            learned,
+            confused,
+            fixed,
+            tags: tags.split(',').map(t => t.trim()).filter(t => t !== '')
+          };
+        }
+        return entry;
+      }));
+      setEditingId(null);
+    } else {
+      // Create new entry
+      const newEntry: JournalEntry = {
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        weekId: selectedWeek,
+        userId: currentUser.id,
+        type: entryType,
+        learned,
+        confused,
+        fixed,
+        takeaway: '', // Deprecated field
+        tags: tags.split(',').map(t => t.trim()).filter(t => t !== '')
+      };
+      setEntries([newEntry, ...entries]);
+    }
 
-    setEntries([newEntry, ...entries]);
     setIsFormOpen(false);
+    resetForm();
+  };
 
-    // Clear Drafts
+  const handleEdit = (entry: JournalEntry) => {
+    // Pre-fill form with entry data
+    setEditingId(entry.id);
+    setEntryType(entry.type);
+    setSelectedWeek(entry.weekId);
+    setLearned(entry.learned);
+    setConfused(entry.confused);
+    setFixed(entry.fixed);
+    setTags(entry.tags.join(', '));
+
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetForm = () => {
     setLearned('');
     setConfused('');
     setFixed('');
     setTags('');
     setEntryType('Daily');
+    setEditingId(null);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    resetForm();
   };
 
   const getUserInitials = (id: string) => users.find(u => u.id === id)?.avatarInitials || 'NA';
@@ -87,8 +130,15 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
           </div>
 
           <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-sm font-medium rounded transition-colors"
+              onClick={() => {
+                if (isFormOpen) handleCancel();
+                else setIsFormOpen(true);
+              }}
+              className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+                  isFormOpen
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      : 'bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white'
+              }`}
           >
             {isFormOpen ? 'Cancel' : 'New Entry'}
           </button>
@@ -97,9 +147,15 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
         {/* Entry Form */}
         {isFormOpen && (
             <div className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-6 relative transition-colors shadow-lg">
-              <div className="absolute top-4 right-4 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
-                <LinkIcon className="w-3 h-3" /> Auto-Save Active
-              </div>
+              {editingId ? (
+                  <div className="absolute top-4 right-4 text-[10px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-800 flex items-center gap-1">
+                    <Edit className="w-3 h-3" /> Editing Entry
+                  </div>
+              ) : (
+                  <div className="absolute top-4 right-4 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3" /> Auto-Save Active
+                  </div>
+              )}
 
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -150,9 +206,23 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
-                  <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded transition-colors shadow-md">
-                    Save Entry
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="px-6 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                      type="submit"
+                      className={`px-6 py-2 text-white text-sm font-medium rounded transition-colors shadow-md ${
+                          editingId
+                              ? 'bg-indigo-600 hover:bg-indigo-700'
+                              : 'bg-indigo-600 hover:bg-indigo-700'
+                      }`}
+                  >
+                    {editingId ? 'Update Entry' : 'Save Entry'}
                   </button>
                 </div>
               </form>
@@ -190,7 +260,7 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
               </div>
           ) : (
               filteredEntries.map(entry => (
-                  <div key={entry.id} className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm">
+                  <div key={entry.id} className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                     <span className="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wider">
@@ -205,13 +275,26 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
                           </div>
                         </div>
                       </div>
-                      {entry.tags.length > 0 && (
-                          <div className="flex gap-1 flex-wrap justify-end max-w-[50%]">
-                            {entry.tags.map(tag => (
-                                <span key={tag} className="text-[10px] text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-700">#{tag}</span>
-                            ))}
-                          </div>
-                      )}
+
+                      <div className="flex items-center gap-2">
+                        {entry.tags.length > 0 && (
+                            <div className="flex gap-1 flex-wrap justify-end">
+                              {entry.tags.map(tag => (
+                                  <span key={tag} className="text-[10px] text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-700">#{tag}</span>
+                              ))}
+                            </div>
+                        )}
+
+                        {currentUser.id === entry.userId && (
+                            <button
+                                onClick={() => handleEdit(entry)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                                title="Edit Entry"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
