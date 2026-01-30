@@ -15,53 +15,50 @@ const getRelativeDate = (daysOffset: number) => {
   return d.toISOString().split('T')[0];
 };
 
-// Hardcoded Standard Curriculum for "Reset/Init" functionality without AI
+const initProgress = () => ({
+  collins: { status: Status.NOT_STARTED },
+  sophia: { status: Status.NOT_STARTED }
+});
+
+// Hardcoded Standard Curriculum for "Reset/Init" functionality
 const STANDARD_CURRICULUM: WeekModule[] = [
   {
     id: 1, title: "Week 1: Basic Python", theme: "Foundations & Syntax", startDate: getRelativeDate(0),
     items: [
-      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python Setup", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(1) },
-      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(2) },
-      { id: "w1-d3", title: "Day 3: Loops and Functions Practice", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(3) },
-      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(5) },
-      { id: "w1-d7", title: "Day 7: Project - Text Analyzer Script", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(7) },
+      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python Setup", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(1) },
+      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(2) },
+      { id: "w1-d3", title: "Day 3: Loops and Functions Practice", type: "Task", progress: initProgress(), dueDate: getRelativeDate(3) },
+      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(5) },
+      { id: "w1-d7", title: "Day 7: Project - Text Analyzer Script", type: "Project", progress: initProgress(), dueDate: getRelativeDate(7) },
     ]
   },
   {
     id: 2, title: "Week 2: Data Analysis Libraries", theme: "NumPy & Pandas", startDate: getRelativeDate(7),
     items: [
-      { id: "w2-d1", title: "Day 8: Intro to NumPy Arrays", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(8) },
-      { id: "w2-d2", title: "Day 9: Pandas DataFrames Basics", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(9) },
-      { id: "w2-d4", title: "Day 11: Data Cleaning with Pandas", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(11) },
-      { id: "w2-d7", title: "Day 14: Project - Dataset Exploratory Analysis", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(14) },
+      { id: "w2-d1", title: "Day 8: Intro to NumPy Arrays", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(8) },
+      { id: "w2-d2", title: "Day 9: Pandas DataFrames Basics", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(9) },
+      { id: "w2-d4", title: "Day 11: Data Cleaning with Pandas", type: "Task", progress: initProgress(), dueDate: getRelativeDate(11) },
+      { id: "w2-d7", title: "Day 14: Project - Dataset Exploratory Analysis", type: "Project", progress: initProgress(), dueDate: getRelativeDate(14) },
     ]
   },
   {
     id: 3, title: "Week 3: Visualization", theme: "Matplotlib & Seaborn", startDate: getRelativeDate(14),
     items: [
-      { id: "w3-d1", title: "Day 15: Matplotlib Fundamentals", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(15) },
-      { id: "w3-d3", title: "Day 17: Seaborn Statistical Plots", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(17) },
-      { id: "w3-d7", title: "Day 21: Project - Sales Dashboard", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(21) },
+      { id: "w3-d1", title: "Day 15: Matplotlib Fundamentals", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(15) },
+      { id: "w3-d3", title: "Day 17: Seaborn Statistical Plots", type: "Task", progress: initProgress(), dueDate: getRelativeDate(17) },
+      { id: "w3-d7", title: "Day 21: Project - Sales Dashboard", type: "Project", progress: initProgress(), dueDate: getRelativeDate(21) },
     ]
   },
   {
     id: 4, title: "Week 4: SQL Fundamentals", theme: "Database Querying", startDate: getRelativeDate(21),
     items: [
-      { id: "w4-d1", title: "Day 22: Relational DB Concepts & SELECT", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(22) },
-      { id: "w4-d3", title: "Day 24: Joins and Aggregations", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(24) },
-      { id: "w4-d7", title: "Day 28: Project - Customer Churn Analysis", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(28) },
+      { id: "w4-d1", title: "Day 22: Relational DB Concepts & SELECT", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(22) },
+      { id: "w4-d3", title: "Day 24: Joins and Aggregations", type: "Task", progress: initProgress(), dueDate: getRelativeDate(24) },
+      { id: "w4-d7", title: "Day 28: Project - Customer Churn Analysis", type: "Project", progress: initProgress(), dueDate: getRelativeDate(28) },
     ]
   }
 ];
 
-/**
- * Syllabus Component
- * 
- * Manages the learning roadmap.
- * - Displays weeks and tasks.
- * - Handles task completion and evidence submission.
- * - REPLACED AI: Uses a standard template loader instead of dynamic generation.
- */
 const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, users }) => {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(modules.length > 0 ? modules[0].id : null);
   
@@ -76,8 +73,18 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
     setExpandedWeek(1);
   };
 
+  const getTaskStatus = (task: TaskItem): Status => {
+     return task.progress[currentUser.id]?.status || Status.NOT_STARTED;
+  };
+  
+  const getTaskEvidence = (task: TaskItem): Evidence | undefined => {
+     return task.progress[currentUser.id]?.evidence;
+  };
+
   const initiateCompletion = (weekId: number, task: TaskItem) => {
-    if (task.status === Status.COMPLETED) {
+    const currentStatus = getTaskStatus(task);
+
+    if (currentStatus === Status.COMPLETED) {
       // Toggle back to not started if needed (simple undo)
       updateTaskStatus(weekId, task.id, Status.NOT_STARTED, undefined);
       return;
@@ -124,7 +131,20 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
         ...s,
         items: s.items.map(t => {
           if (t.id !== taskId) return t;
-          return { ...t, status, evidence };
+          
+          // Update ONLY the current user's progress
+          const currentProgress = t.progress[currentUser.id] || {};
+          return {
+            ...t,
+            progress: {
+                ...t.progress,
+                [currentUser.id]: {
+                    ...currentProgress,
+                    status,
+                    evidence
+                }
+            }
+          };
         })
       };
     }));
@@ -158,7 +178,8 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
 
       <div className="space-y-4">
         {modules.map((module) => {
-          const completionCount = module.items.filter(t => t.status === Status.COMPLETED).length;
+          // Progress is now calculated for the CURRENT USER
+          const completionCount = module.items.filter(t => (t.progress[currentUser.id]?.status || Status.NOT_STARTED) === Status.COMPLETED).length;
           const totalCount = module.items.length;
           const progress = totalCount === 0 ? 0 : (completionCount / totalCount) * 100;
 
@@ -197,21 +218,27 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
             {expandedWeek === module.id && (
               <div className="border-t border-slate-200 dark:border-slate-700">
                  <div className="grid grid-cols-12 gap-4 px-6 py-2 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <div className="col-span-6">Deliverable</div>
-                    <div className="col-span-2">Category</div>
-                    <div className="col-span-2">Owner</div>
+                    <div className="col-span-8">Deliverable</div>
+                    <div className="col-span-2">Type</div>
                     <div className="col-span-2 text-right">Status</div>
                  </div>
 
                 {module.items.map((item) => {
+                  // Only show tasks relevant to current user (Shared tasks OR assigned tasks)
+                  if (item.assigneeId && item.assigneeId !== currentUser.id) return null;
+
+                  const status = getTaskStatus(item);
+                  const evidence = getTaskEvidence(item);
+                  const isCompleted = status === Status.COMPLETED;
+
                   return (
                   <div key={item.id} className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-100 dark:border-slate-700 items-center hover:bg-white dark:hover:bg-slate-750 transition-colors last:border-0">
-                    <div className="col-span-6">
-                      <p className={`text-sm ${item.status === Status.COMPLETED ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
+                    <div className="col-span-8">
+                      <p className={`text-sm ${isCompleted ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
                         {item.title.replace(/\s*\([^)]*\)/g, "").trim()}
                       </p>
-                      {item.evidence && (
-                        <a href={item.evidence.content} target="_blank" rel="noreferrer" className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline block mt-0.5">
+                      {evidence && (
+                        <a href={evidence.content} target="_blank" rel="noreferrer" className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline block mt-0.5">
                              View Evidence
                         </a>
                       )}
@@ -223,22 +250,16 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
                          </span>
                     </div>
 
-                    <div className="col-span-2 flex items-center gap-2">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                            {getUserInitials(item.ownerId)}
-                        </span>
-                    </div>
-
                     <div className="col-span-2 flex justify-end">
                        <button 
                          onClick={() => initiateCompletion(module.id, item)}
                          className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                           item.status === Status.COMPLETED
+                           isCompleted
                              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
                              : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500'
                          }`}
                        >
-                         {item.status === Status.COMPLETED ? 'Complete' : 'Mark Done'}
+                         {isCompleted ? 'Complete' : 'Mark Done'}
                        </button>
                     </div>
                   </div>
