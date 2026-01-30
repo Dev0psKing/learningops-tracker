@@ -208,7 +208,7 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
                   <div key={item.id} className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-100 dark:border-slate-700 items-center hover:bg-white dark:hover:bg-slate-750 transition-colors last:border-0">
                     <div className="col-span-6">
                       <p className={`text-sm ${item.status === Status.COMPLETED ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
-                        {item.title}
+                        {item.title.replace(/\s*\([^)]*\)/g, "").trim()}
                       </p>
                       {item.evidence && (
                         <a href={item.evidence.content} target="_blank" rel="noreferrer" className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline block mt-0.5">
@@ -259,7 +259,7 @@ const Syllabus: React.FC<SyllabusProps> = ({ modules, setModules, currentUser, u
              </div>
              
              <p className="text-sm text-slate-600 dark:text-slate-300 mb-6">
-               Provide evidence of completion for <span className="font-semibold text-slate-800 dark:text-white">"{selectedTask.task.title}"</span>.
+               Provide evidence of completion for <span className="font-semibold text-slate-800 dark:text-white">"{selectedTask.task.title.replace(/\s*\([^)]*\)/g, "").trim()}"</span>.
              </p>
 
              <form onSubmit={submitEvidence} className="space-y-4">
