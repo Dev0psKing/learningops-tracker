@@ -1,5 +1,5 @@
 import React from 'react';
-import { Notification, TaskItem, User, Status } from '../types';
+import { Notification, TaskItem, User } from '../types';
 import { AlertTriangle, Clock, Calendar, CheckCircle } from './Icons';
 
 interface NotificationPanelProps {
@@ -7,7 +7,6 @@ interface NotificationPanelProps {
   lateTasks: TaskItem[];
   upcomingTasks: TaskItem[];
   users: User[];
-  currentUser: User;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -17,28 +16,12 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   lateTasks, 
   upcomingTasks, 
   users,
-  currentUser,
   isOpen, 
   onClose 
 }) => {
   if (!isOpen) return null;
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || id;
-
-  // Helper to determine who is responsible for a late task displayed in the panel
-  const getLateLabel = (task: TaskItem) => {
-    if (task.assigneeId) {
-        return getUserName(task.assigneeId);
-    }
-    // If shared, check who hasn't finished it
-    const incompleteUsers = users.filter(u => {
-        const status = task.progress[u.id]?.status || Status.NOT_STARTED;
-        return status !== Status.COMPLETED;
-    });
-
-    if (incompleteUsers.length === users.length) return "Everyone";
-    return incompleteUsers.map(u => u.name).join(', ');
-  };
 
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
@@ -93,16 +76,17 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                {lateTasks.map(task => (
                  <div key={task.id} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm border-l-4 border-l-rose-500 dark:border-l-rose-500">
                     <div className="flex justify-between items-start">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">
-                          {task.title.replace(/\s*\([^)]*\)/g, "").trim()}
-                        </p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">{task.title}</p>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">
-                           Late: {getLateLabel(task)}
-                        </span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">{getUserName(task.ownerId)}</span>
                         <span className="text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
                             <Clock className="w-3 h-3" /> Due {task.dueDate}
+                        </span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-50 dark:border-slate-700">
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Compensation Task added
                         </span>
                     </div>
                  </div>
@@ -111,19 +95,15 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
            )}
         </div>
 
-        {/* Upcoming Deadlines (For Current User) */}
+        {/* Upcoming Deadlines */}
         <div>
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">My Upcoming (3 Days)</h3>
+           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Upcoming (3 Days)</h3>
            <div className="space-y-2">
              {upcomingTasks.map(task => (
                  <div key={task.id} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">
-                      {task.title.replace(/\s*\([^)]*\)/g, "").trim()}
-                    </p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">{task.title}</p>
                     <div className="flex justify-between items-center mt-2">
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">
-                          {task.assigneeId ? 'Assigned to you' : 'Shared Task'}
-                        </span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">{getUserName(task.ownerId)}</span>
                         <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
                             <Calendar className="w-3 h-3" /> {task.dueDate}
                         </span>
