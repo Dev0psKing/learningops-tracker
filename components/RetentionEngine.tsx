@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { User, Flashcard, FlashcardBox } from '../types';
-import { Layers, Repeat, Plus, Trash, CheckCircle, BrainCircuit, Eye, Clock } from './Icons';
+import { Layers, Plus, Trash, CheckCircle, Eye, Clock, HelpCircle, TrendingUp, BrainCircuit, Target } from './Icons';
 import { SimpleMarkdown } from './SimpleMarkdown';
 
 interface RetentionEngineProps {
@@ -21,6 +21,7 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
     const [activeTab, setActiveTab] = useState<'review' | 'manage' | 'add'>('review');
     const [showAnswer, setShowAnswer] = useState(false);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
+    const [showGuide, setShowGuide] = useState(true);
 
     // Add Form State
     const [newFront, setNewFront] = useState('');
@@ -81,10 +82,7 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
             return c;
         }));
 
-        // Reset View for next card (which is actually index 0 again since the array filters out reviewed cards eventually,
-        // but due to state update batching, we just keep index 0 unless we want to cycle through session)
-        // Actually, since dueCards updates when setCards runs (dependencies), the processed card vanishes from dueCards.
-        // So index 0 is always the "next" card.
+        // Reset View for next card
         setShowAnswer(false);
         setCurrentCardIndex(0);
     };
@@ -126,7 +124,15 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                     <p className="text-sm text-slate-500 dark:text-slate-400">Leitner System Spaced Repetition (SRS)</p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={() => setShowGuide(!showGuide)}
+                        className={`p-2 rounded-lg transition-colors ${showGuide ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+                        title={showGuide ? "Hide Guide" : "Show Guide"}
+                    >
+                        <HelpCircle className="w-5 h-5" />
+                    </button>
+                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
                     <button
                         onClick={() => setActiveTab('review')}
                         className={`px-4 py-2 text-sm font-bold rounded border transition-colors ${activeTab === 'review' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`}
@@ -148,10 +154,89 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                 </div>
             </div>
 
+            {/* --- ONBOARDING GUIDE --- */}
+            {showGuide && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-indigo-900/50 shadow-sm p-6 relative overflow-hidden transition-colors mb-6 animate-fade-in">
+                    {/* Decorative Accent */}
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                                Hack Your Memory with Spaced Repetition
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
+                                Stop reviewing what you already know. The Retention Engine uses the <strong>Leitner System</strong> to schedule reviews exactly when you are about to forget them, maximizing long-term memory with minimal effort.
+                            </p>
+                        </div>
+                        <button onClick={() => setShowGuide(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Left: The Process */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">How it Works</h4>
+                            <div className="flex gap-4 items-start">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400 font-bold text-sm">1</div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Review & Reveal</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Read the question. Try to recall the answer mentally, then click "Reveal".</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 items-start">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400 font-bold text-sm">2</div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Rate Performance</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        <span className="text-rose-500 font-bold">Forgot:</span> Resets to Box 1 (Review tomorrow).<br/>
+                                        <span className="text-indigo-500 font-bold">Recalled:</span> Promotes to next Box (Review later).
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 items-start">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400 font-bold text-sm">3</div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Compound Knowledge</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cards you know well are pushed weeks into the future. Cards you struggle with appear daily.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right: The Boxes */}
+                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-5 border border-slate-100 dark:border-slate-700">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4" /> The Intervals
+                            </h4>
+                            <div className="flex justify-between items-end h-24 gap-2">
+                                {[
+                                    { box: 1, days: '1d', label: 'New', height: 'h-8', color: 'bg-rose-400' },
+                                    { box: 2, days: '3d', label: 'Recent', height: 'h-12', color: 'bg-amber-400' },
+                                    { box: 3, days: '7d', label: 'Stable', height: 'h-16', color: 'bg-blue-400' },
+                                    { box: 4, days: '14d', label: 'Solid', height: 'h-20', color: 'bg-indigo-400' },
+                                    { box: 5, days: '30d', label: 'Mastered', height: 'h-24', color: 'bg-emerald-400' },
+                                ].map((b) => (
+                                    <div key={b.box} className="flex-1 flex flex-col items-center gap-1 group">
+                                        <span className="text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute -mt-4">{b.label}</span>
+                                        <div className={`w-full ${b.height} ${b.color} rounded-t-md opacity-80 group-hover:opacity-100 transition-opacity`}></div>
+                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{b.days}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[10px] text-center text-slate-400 italic">
+                                "Recalled" moves right. "Forgot" moves all the way left.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- STATS BAR --- */}
             <div className="grid grid-cols-5 gap-2">
                 {[1,2,3,4,5].map((box) => (
-                    <div key={box} className={`p-2 rounded border text-center ${stats[box as FlashcardBox] > 0 ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+                    <div key={box} className={`p-2 rounded border text-center transition-colors ${stats[box as FlashcardBox] > 0 ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
                         <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">Box {box}</div>
                         <div className={`text-lg font-bold ${stats[box as FlashcardBox] > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}`}>
                             {stats[box as FlashcardBox]}
@@ -169,20 +254,41 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                             <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">All Caught Up!</h3>
                             <p className="text-slate-500 dark:text-slate-400 mb-6">You have reviewed all cards due for today.</p>
-                            <button onClick={() => setActiveTab('add')} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded transition-colors">Create New Cards</button>
+                            <div className="flex gap-3 justify-center">
+                                <button onClick={() => setActiveTab('add')} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded transition-colors">Create New Cards</button>
+                                <button onClick={() => setActiveTab('manage')} className="px-6 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded transition-colors">Manage Deck</button>
+                            </div>
                         </div>
                     ) : (
                         <div className="perspective-1000">
                             <div className="flex justify-between items-center mb-2 px-1">
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Card {currentCardIndex + 1} of {dueCards.length}</span>
-                                <span className="text-xs font-bold text-indigo-500 uppercase tracking-wide">Box {currentCard.box}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400">Current Level:</span>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                        currentCard.box === 1 ? 'bg-rose-100 text-rose-700' :
+                                            currentCard.box === 5 ? 'bg-emerald-100 text-emerald-700' :
+                                                'bg-indigo-100 text-indigo-700'
+                                    }`}>Box {currentCard.box}</span>
+                                </div>
                             </div>
 
-                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden min-h-[300px] flex flex-col relative">
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden min-h-[400px] flex flex-col relative transition-colors">
                                 {/* Front */}
                                 <div className="p-8 flex-1 flex flex-col">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Question / Concept</h3>
-                                    <div className="prose prose-lg dark:prose-invert max-w-none flex-1">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                                            <Target className="w-4 h-4" /> Question / Concept
+                                        </h3>
+                                        {currentCard.tags && currentCard.tags.length > 0 && (
+                                            <div className="flex gap-1">
+                                                {currentCard.tags.map(t => (
+                                                    <span key={t} className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">#{t}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="prose prose-lg dark:prose-invert max-w-none flex-1 flex flex-col justify-center">
                                         <SimpleMarkdown content={currentCard.front} />
                                     </div>
                                 </div>
@@ -190,7 +296,9 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                                 {/* Back (Reveal) */}
                                 {showAnswer && (
                                     <div className="p-8 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex-1 animate-fade-in">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Answer / Solution</h3>
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4" /> Answer / Solution
+                                        </h3>
                                         <div className="prose prose-sm dark:prose-invert max-w-none">
                                             <SimpleMarkdown content={currentCard.back} />
                                         </div>
@@ -198,11 +306,11 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                                 )}
 
                                 {/* Controls */}
-                                <div className="p-4 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-center">
+                                <div className="p-4 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-center sticky bottom-0">
                                     {!showAnswer ? (
                                         <button
                                             onClick={() => setShowAnswer(true)}
-                                            className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-md transition-transform transform hover:-translate-y-0.5"
+                                            className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-md transition-transform transform hover:-translate-y-0.5 w-full justify-center md:w-auto"
                                         >
                                             <Eye className="w-5 h-5" /> Reveal Answer
                                         </button>
@@ -210,15 +318,17 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                                         <div className="flex gap-4 w-full">
                                             <button
                                                 onClick={() => handleRate(false)}
-                                                className="flex-1 py-3 bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 font-bold rounded hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                                                className="flex-1 py-3 bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 font-bold rounded hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex flex-col items-center justify-center gap-1"
                                             >
-                                                Forgot (Box 1)
+                                                <span>Forgot</span>
+                                                <span className="text-[9px] font-normal opacity-70">Reset to Box 1 (1d)</span>
                                             </button>
                                             <button
                                                 onClick={() => handleRate(true)}
-                                                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-md transition-colors"
+                                                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-md transition-colors flex flex-col items-center justify-center gap-1"
                                             >
-                                                Recalled (Box {Math.min(currentCard.box + 1, 5)})
+                                                <span>Recalled</span>
+                                                <span className="text-[9px] font-normal opacity-80">Promote to Box {Math.min(currentCard.box + 1, 5)} ({BOX_INTERVALS[Math.min(currentCard.box + 1, 5) as FlashcardBox]}d)</span>
                                             </button>
                                         </div>
                                     )}
@@ -233,28 +343,30 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
             {activeTab === 'manage' && (
                 <div className="space-y-4">
                     {myCards.length === 0 ? (
-                        <div className="text-center py-12 text-slate-400 italic">No cards in deck.</div>
+                        <div className="text-center py-12 text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 rounded border border-dashed border-slate-200 dark:border-slate-700">
+                            No cards in deck. Switch to the 'Add' tab or create cards from your Journal.
+                        </div>
                     ) : (
                         myCards.map(card => (
-                            <div key={card.id} className="bg-white dark:bg-slate-800 p-4 rounded border border-slate-200 dark:border-slate-700 flex justify-between items-start group">
+                            <div key={card.id} className="bg-white dark:bg-slate-800 p-4 rounded border border-slate-200 dark:border-slate-700 flex justify-between items-start group hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
                                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Front</span>
-                                        <p className="text-sm text-slate-800 dark:text-white line-clamp-2">{card.front.substring(0, 100)}...</p>
+                                        <p className="text-sm text-slate-800 dark:text-white line-clamp-2 font-medium">{card.front.substring(0, 100)}...</p>
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Back</span>
                                         <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{card.back.substring(0, 100)}...</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2 ml-4">
-                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${card.box === 5 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600'}`}>
+                                <div className="flex flex-col items-end gap-2 ml-4 min-w-[80px]">
+                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded border w-full text-center ${card.box === 5 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600'}`}>
                         Box {card.box}
                      </span>
-                                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                    <span className="text-[10px] text-slate-400 flex items-center gap-1 whitespace-nowrap">
                         <Clock className="w-3 h-3" /> {card.nextReviewDate}
                      </span>
-                                    <button onClick={() => handleDelete(card.id)} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleDelete(card.id)} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
                                         <Trash className="w-4 h-4" />
                                     </button>
                                 </div>
