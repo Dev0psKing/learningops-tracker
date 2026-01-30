@@ -20,187 +20,161 @@ const getRelativeDate = (daysOffset: number) => {
   return d.toISOString().split('T')[0];
 };
 
-// --- INITIAL DATA SEEDING (ENRICHED) ---
+// --- INITIAL DATA SEEDING (CLEAN SLATE) ---
 const INITIAL_USERS: User[] = [
   { id: 'collins', name: 'Collins', role: 'Curriculum Lead', avatarInitials: 'CO', color: 'bg-blue-600' },
   { id: 'sophia', name: 'Sophia', role: 'Accountability Lead', avatarInitials: 'SO', color: 'bg-emerald-500' }
 ];
 
-// 9-Week Data Analytics Roadmap
+const initProgress = () => ({
+  collins: { status: Status.NOT_STARTED },
+  sophia: { status: Status.NOT_STARTED }
+});
+
+// 9-Week Data Analytics Roadmap - RESET TO DAY 0
 const INITIAL_MODULES: WeekModule[] = [
   {
     id: 1,
     title: "Week 1: Basic Python",
     theme: "Foundations & Syntax",
-    startDate: getRelativeDate(-21),
+    startDate: getRelativeDate(0),
     items: [
-      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python (5 Articles, 5 Problems, 18 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-20) },
-      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow (3 Articles, 6 Problems, 13 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-19) },
-      { id: "w1-d3", title: "Day 3: Loops and Functions (3 Articles, 5 Problems, 14 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-18) },
-      { id: "w1-d4", title: "Day 4: String and List (2 Articles, 11 Problems, 15 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-17) },
-      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set (3 Articles, 4 Problems, 15 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-16) },
-      { id: "w1-d6", title: "Day 6: Python Collections (2 Articles, 3 Problems, 15 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-15) },
-      { id: "w1-d7", title: "Day 7: Advanced Python Concepts (6 Articles, 5 Problems, 15 MCQs)", type: "Project", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-14) },
+      { id: "w1-d1", title: "Day 1: Intro to Data Analytics & Python", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(1) },
+      { id: "w1-d2", title: "Day 2: Python Basics – Data Types & Control Flow", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(2) },
+      { id: "w1-d3", title: "Day 3: Loops and Functions", type: "Task", progress: initProgress(), dueDate: getRelativeDate(3) },
+      { id: "w1-d4", title: "Day 4: String and List", type: "Task", progress: initProgress(), dueDate: getRelativeDate(4) },
+      { id: "w1-d5", title: "Day 5: Dictionary, Tuple and Set", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(5) },
+      { id: "w1-d6", title: "Day 6: Python Collections", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(6) },
+      { id: "w1-d7", title: "Day 7: Advanced Python Concepts", type: "Project", progress: initProgress(), dueDate: getRelativeDate(7) },
     ]
   },
   {
     id: 2,
     title: "Week 2: Maths for Data Analysis",
     theme: "Statistics & Probability",
-    startDate: getRelativeDate(-14),
+    startDate: getRelativeDate(7),
     items: [
-      { id: "w2-d8", title: "Day 8: Introduction to Statistics (7 Articles, 10 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-13) },
-      { id: "w2-d9", title: "Day 9: Probability & Distributions (8 Articles, 12 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-12) },
-      { id: "w2-d10", title: "Day 10: Understanding Data Relationships (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-11) },
-      { id: "w2-d11", title: "Day 11: CLT & Hypothesis Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-10) },
-      { id: "w2-d12", title: "Day 12: Parametric Testing Techniques (5 Articles, 15 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-9) },
-      { id: "w2-d13", title: "Day 13: Non-Parametric Testing (3 Articles, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-8) },
-      { id: "w2-d14", title: "Day 14: Data Skewness Detection (1 Article, 8 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-7) },
+      { id: "w2-d8", title: "Day 8: Introduction to Statistics", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(8) },
+      { id: "w2-d9", title: "Day 9: Probability & Distributions", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(9) },
+      { id: "w2-d10", title: "Day 10: Understanding Data Relationships", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(10) },
+      { id: "w2-d11", title: "Day 11: CLT & Hypothesis Testing", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(11) },
+      { id: "w2-d12", title: "Day 12: Parametric Testing Techniques", type: "Task", progress: initProgress(), dueDate: getRelativeDate(12) },
+      { id: "w2-d13", title: "Day 13: Non-Parametric Testing", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(13) },
+      { id: "w2-d14", title: "Day 14: Data Skewness Detection", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(14) },
     ]
   },
   {
     id: 3,
     title: "Week 3: NumPy and Pandas",
     theme: "Data Manipulation",
-    startDate: getRelativeDate(-7),
+    startDate: getRelativeDate(14),
     items: [
-      { id: "w3-d15", title: "Day 15: Introduction to NumPy (3 Articles, 14 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-6) },
-      { id: "w3-d16", title: "Day 16: Introduction to Pandas (4 Articles, 13 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-5) },
-      { id: "w3-d17", title: "Day 17: Data Inspection in Pandas (5 Articles, 13 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-4) },
-      { id: "w3-d18", title: "Day 18: Pandas Advanced Operations (7 Articles, 20 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-3) },
-      { id: "w3-d19", title: "Day 19: Missing Data Handling (1 Article, 6 MCQs)", type: "Topic", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(-2) },
-      { id: "w3-d20", title: "Day 20: Outlier Detection (3 Articles, 12 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "sophia", dueDate: getRelativeDate(-1) },
-      { id: "w3-d21", title: "Day 21: Duplicate Data Handling (3 Articles, 10 Problems, 8 MCQs)", type: "Task", status: Status.COMPLETED, ownerId: "collins", dueDate: getRelativeDate(0) },
+      { id: "w3-d15", title: "Day 15: Introduction to NumPy", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(15) },
+      { id: "w3-d16", title: "Day 16: Introduction to Pandas", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(16) },
+      { id: "w3-d17", title: "Day 17: Data Inspection in Pandas", type: "Task", progress: initProgress(), dueDate: getRelativeDate(17) },
+      { id: "w3-d18", title: "Day 18: Pandas Advanced Operations", type: "Task", progress: initProgress(), dueDate: getRelativeDate(18) },
+      { id: "w3-d19", title: "Day 19: Missing Data Handling", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(19) },
+      { id: "w3-d20", title: "Day 20: Outlier Detection", type: "Task", progress: initProgress(), dueDate: getRelativeDate(20) },
+      { id: "w3-d21", title: "Day 21: Duplicate Data Handling", type: "Task", progress: initProgress(), dueDate: getRelativeDate(21) },
     ]
   },
   {
     id: 4,
     title: "Week 4: Data Visualization",
     theme: "Matplotlib & Seaborn",
-    startDate: getRelativeDate(0),
+    startDate: getRelativeDate(21),
     items: [
-      { id: "w4-d22", title: "Day 22: Matplotlib Visualization (1 Article, 7 MCQs)", type: "Topic", status: Status.IN_PROGRESS, ownerId: "sophia", dueDate: getRelativeDate(1) },
-      { id: "w4-d23", title: "Day 23: Seaborn Visualization (1 Article, 5 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(2) },
-      { id: "w4-d24", title: "Day 24: Interactive Viz with Plotly (1 Article, 7 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(3) },
-      { id: "w4-d25", title: "Day 25: Correlation Matrix & Heatmaps (1 Article, 5 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(4) },
-      { id: "w4-d26", title: "Day 26: Time Series Visualization (1 Article, 9 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(5) },
-      { id: "w4-d27", title: "Day 27: Project - Word Clouds (1 Article, 6 MCQs)", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(6) },
-      { id: "w4-d28", title: "Day 28: Project - Zomato Analysis (1 Article, 5 MCQs)", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(7) },
+      { id: "w4-d22", title: "Day 22: Matplotlib Visualization", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(22) },
+      { id: "w4-d23", title: "Day 23: Seaborn Visualization", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(23) },
+      { id: "w4-d24", title: "Day 24: Interactive Viz with Plotly", type: "Task", progress: initProgress(), dueDate: getRelativeDate(24) },
+      { id: "w4-d25", title: "Day 25: Correlation Matrix & Heatmaps", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(25) },
+      { id: "w4-d26", title: "Day 26: Time Series Visualization", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(26) },
+      { id: "w4-d27", title: "Day 27: Project - Word Clouds", type: "Project", progress: initProgress(), dueDate: getRelativeDate(27) },
+      { id: "w4-d28", title: "Day 28: Project - Zomato Analysis", type: "Project", progress: initProgress(), dueDate: getRelativeDate(28) },
     ]
   },
   {
     id: 5,
     title: "Week 5: Web Scraping and EDA",
     theme: "Scraping & Cleaning",
-    startDate: getRelativeDate(7),
+    startDate: getRelativeDate(28),
     items: [
-      { id: "w5-d29", title: "Day 29: Intro to Web Scraping (2 Articles, 10 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(8) },
-      { id: "w5-d30", title: "Day 30: Web Scraping Tools (4 Articles, 9 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(9) },
-      { id: "w5-d31", title: "Day 31: Dynamic Web Scraping (2 Articles, 10 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(10) },
-      { id: "w5-d32", title: "Day 32: Post-Scraping Data Cleaning (1 Article, 8 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(11) },
-      { id: "w5-d33", title: "Day 33: Exploratory Data Analysis (3 Articles, 9 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(12) },
-      { id: "w5-d34", title: "Day 34: Advanced EDA Project (1 Article)", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(13) },
-      { id: "w5-d35", title: "Day 35: Project - Scrape & Analyze Integration", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(14) },
+      { id: "w5-d29", title: "Day 29: Intro to Web Scraping", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(29) },
+      { id: "w5-d30", title: "Day 30: Web Scraping Tools", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(30) },
+      { id: "w5-d31", title: "Day 31: Dynamic Web Scraping", type: "Task", progress: initProgress(), dueDate: getRelativeDate(31) },
+      { id: "w5-d32", title: "Day 32: Post-Scraping Data Cleaning", type: "Task", progress: initProgress(), dueDate: getRelativeDate(32) },
+      { id: "w5-d33", title: "Day 33: Exploratory Data Analysis", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(33) },
+      { id: "w5-d34", title: "Day 34: Advanced EDA Project", type: "Project", progress: initProgress(), dueDate: getRelativeDate(34) },
+      { id: "w5-d35", title: "Day 35: Project - Scrape & Analyze Integration", type: "Project", progress: initProgress(), dueDate: getRelativeDate(35) },
     ]
   },
   {
     id: 6,
     title: "Week 6: Excel Mastery",
     theme: "Spreadsheets",
-    startDate: getRelativeDate(14),
+    startDate: getRelativeDate(35),
     items: [
-      { id: "w6-d36", title: "Day 36: Excel Basics (4 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(15) },
-      { id: "w6-d37", title: "Day 37: Excel Data Management (5 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(16) },
-      { id: "w6-d38", title: "Day 38: Lookup & Text Functions (5 Articles, 9 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(17) },
-      { id: "w6-d39", title: "Day 39: Logical & Date Functions (3 Articles, 9 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(18) },
-      { id: "w6-d40", title: "Day 40: Excel Pivot Tables (2 Articles, 9 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(19) },
-      { id: "w6-d41", title: "Day 41: Charting & Dashboards (5 Articles, 9 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(20) },
-      { id: "w6-d42", title: "Day 42: Project - Sales Data Analysis", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(21) },
+      { id: "w6-d36", title: "Day 36: Excel Basics", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(36) },
+      { id: "w6-d37", title: "Day 37: Excel Data Management", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(37) },
+      { id: "w6-d38", title: "Day 38: Lookup & Text Functions", type: "Task", progress: initProgress(), dueDate: getRelativeDate(38) },
+      { id: "w6-d39", title: "Day 39: Logical & Date Functions", type: "Task", progress: initProgress(), dueDate: getRelativeDate(39) },
+      { id: "w6-d40", title: "Day 40: Excel Pivot Tables", type: "Task", progress: initProgress(), dueDate: getRelativeDate(40) },
+      { id: "w6-d41", title: "Day 41: Charting & Dashboards", type: "Task", progress: initProgress(), dueDate: getRelativeDate(41) },
+      { id: "w6-d42", title: "Day 42: Project - Sales Data Analysis", type: "Project", progress: initProgress(), dueDate: getRelativeDate(42) },
     ]
   },
   {
     id: 7,
     title: "Week 7: SQL",
     theme: "Database Querying",
-    startDate: getRelativeDate(21),
+    startDate: getRelativeDate(42),
     items: [
-      { id: "w7-d43", title: "Day 43: Intro to SQL (4 Articles, 4 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(22) },
-      { id: "w7-d44", title: "Day 44: SQL Basics (9 Articles, 10 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(23) },
-      { id: "w7-d45", title: "Day 45: SQL Aggregations (4 Articles, 10 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(24) },
-      { id: "w7-d46", title: "Day 46: SQL Joins (6 Articles, 10 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(25) },
-      { id: "w7-d47", title: "Day 47: Operators & Subqueries (3 Articles, 10 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(26) },
-      { id: "w7-d48", title: "Day 48: Window Functions & Optimization (3 Articles, 10 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(27) },
-      { id: "w7-d49", title: "Day 49: Project - Customer Revenue Analysis", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(28) },
+      { id: "w7-d43", title: "Day 43: Intro to SQL", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(43) },
+      { id: "w7-d44", title: "Day 44: SQL Basics", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(44) },
+      { id: "w7-d45", title: "Day 45: SQL Aggregations", type: "Task", progress: initProgress(), dueDate: getRelativeDate(45) },
+      { id: "w7-d46", title: "Day 46: SQL Joins", type: "Task", progress: initProgress(), dueDate: getRelativeDate(46) },
+      { id: "w7-d47", title: "Day 47: Operators & Subqueries", type: "Task", progress: initProgress(), dueDate: getRelativeDate(47) },
+      { id: "w7-d48", title: "Day 48: Window Functions & Optimization", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(48) },
+      { id: "w7-d49", title: "Day 49: Project - Customer Revenue Analysis", type: "Project", progress: initProgress(), dueDate: getRelativeDate(49) },
     ]
   },
   {
     id: 8,
     title: "Week 8: Power BI",
     theme: "Business Intelligence",
-    startDate: getRelativeDate(28),
+    startDate: getRelativeDate(49),
     items: [
-      { id: "w8-d50", title: "Day 50: Power BI Intro (4 Articles, 8 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(29) },
-      { id: "w8-d51", title: "Day 51: Data Preparation (5 Articles, 15 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(30) },
-      { id: "w8-d52", title: "Day 52: DAX Basics (4 Articles, 11 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(31) },
-      { id: "w8-d53", title: "Day 53: Advanced DAX (4 Articles, 12 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(32) },
-      { id: "w8-d54", title: "Day 54: Visualizations (6 Articles, 14 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(33) },
-      { id: "w8-d55", title: "Day 55: Dashboards & Reports (2 Articles, 10 MCQs)", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(34) },
-      { id: "w8-d56", title: "Day 56: Project - Inventory Management", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(35) },
+      { id: "w8-d50", title: "Day 50: Power BI Intro", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(50) },
+      { id: "w8-d51", title: "Day 51: Data Preparation", type: "Task", progress: initProgress(), dueDate: getRelativeDate(51) },
+      { id: "w8-d52", title: "Day 52: DAX Basics", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(52) },
+      { id: "w8-d53", title: "Day 53: Advanced DAX", type: "Task", progress: initProgress(), dueDate: getRelativeDate(53) },
+      { id: "w8-d54", title: "Day 54: Visualizations", type: "Task", progress: initProgress(), dueDate: getRelativeDate(54) },
+      { id: "w8-d55", title: "Day 55: Dashboards & Reports", type: "Project", progress: initProgress(), dueDate: getRelativeDate(55) },
+      { id: "w8-d56", title: "Day 56: Project - Inventory Management", type: "Project", progress: initProgress(), dueDate: getRelativeDate(56) },
     ]
   },
   {
     id: 9,
     title: "Week 9: Tableau",
     theme: "Visual Analytics",
-    startDate: getRelativeDate(35),
+    startDate: getRelativeDate(56),
     items: [
-      { id: "w9-d57", title: "Day 57: Intro to Tableau (3 Articles, 6 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(36) },
-      { id: "w9-d58", title: "Day 58: Charting Basics (6 Articles, 7 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(37) },
-      { id: "w9-d59", title: "Day 59: Data Structure (4 Articles, 7 MCQs)", type: "Topic", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(38) },
-      { id: "w9-d60", title: "Day 60: Calculated Fields (5 Articles, 8 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(39) },
-      { id: "w9-d61", title: "Day 61: Filters & Actions (5 Articles, 10 MCQs)", type: "Task", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(40) },
-      { id: "w9-d62", title: "Day 62: Tableau Dashboards (5 Articles, 7 MCQs)", type: "Project", status: Status.NOT_STARTED, ownerId: "sophia", dueDate: getRelativeDate(41) },
-      { id: "w9-d63", title: "Day 63: Project - COVID-19 World Dashboard", type: "Project", status: Status.NOT_STARTED, ownerId: "collins", dueDate: getRelativeDate(42) },
+      { id: "w9-d57", title: "Day 57: Intro to Tableau", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(57) },
+      { id: "w9-d58", title: "Day 58: Charting Basics", type: "Task", progress: initProgress(), dueDate: getRelativeDate(58) },
+      { id: "w9-d59", title: "Day 59: Data Structure", type: "Topic", progress: initProgress(), dueDate: getRelativeDate(59) },
+      { id: "w9-d60", title: "Day 60: Calculated Fields", type: "Task", progress: initProgress(), dueDate: getRelativeDate(60) },
+      { id: "w9-d61", title: "Day 61: Filters & Actions", type: "Task", progress: initProgress(), dueDate: getRelativeDate(61) },
+      { id: "w9-d62", title: "Day 62: Tableau Dashboards", type: "Project", progress: initProgress(), dueDate: getRelativeDate(62) },
+      { id: "w9-d63", title: "Day 63: Project - COVID-19 World Dashboard", type: "Project", progress: initProgress(), dueDate: getRelativeDate(63) },
     ]
   }
 ];
 
-const MOCK_LOGS: StudyLog[] = [
-  { id: '1', date: getRelativeDate(-20), hours: 3.5, notes: 'Day 1: Intro to Python. Finished articles.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '2', date: getRelativeDate(-19), hours: 2.0, notes: 'Day 2: Control flow practice. Logic is key.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '3', date: getRelativeDate(-14), hours: 4.0, notes: 'Day 7 Project: Advanced concepts applied. Tricky.', difficulty: Difficulty.HARD, userId: 'collins' },
-  { id: '4', date: getRelativeDate(-10), hours: 2.5, notes: 'Day 11: CLT theory reading.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-  { id: '5', date: getRelativeDate(-6), hours: 3.0, notes: 'Day 15: NumPy basics. Arrays are fast.', difficulty: Difficulty.EASY, userId: 'collins' },
-  { id: '6', date: getRelativeDate(-3), hours: 3.5, notes: 'Day 18: Pandas operations. Merging is powerful.', difficulty: Difficulty.MEDIUM, userId: 'sophia' },
-];
-
-const MOCK_SCORES: WeeklyScore[] = [
-  // Week 1: Strong start
-  { id: 's1-c', weekId: 1, userId: 'collins', mastery: 4, output: 5, consistency: 4, collaboration: 5, total: 18, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  { id: 's1-s', weekId: 1, userId: 'sophia', mastery: 3, output: 4, consistency: 4, collaboration: 5, total: 16, status: 'On Track', dateLogged: getRelativeDate(-14) },
-  // Week 2: Dip in consistency
-  { id: 's2-c', weekId: 2, userId: 'collins', mastery: 3, output: 3, consistency: 2, collaboration: 4, total: 12, status: 'Needs Adjustment', dateLogged: getRelativeDate(-7) },
-  { id: 's2-s', weekId: 2, userId: 'sophia', mastery: 2, output: 3, consistency: 2, collaboration: 3, total: 10, status: 'Intervention Required', dateLogged: getRelativeDate(-7) }
-];
-
-const MOCK_JOURNAL: JournalEntry[] = [
-  {
-    id: 'j1', date: getRelativeDate(-10), weekId: 2, userId: 'collins', type: 'Daily',
-    learned: 'Hypothesis testing requires distinct null/alt definitions.',
-    confused: 'P-value interpretation.',
-    fixed: 'Read extra StatQuest article.',
-    takeaway: 'Low p-value = Reject Null.',
-    tags: ['Stats', 'Hypothesis']
-  },
-  {
-    id: 'j2', date: getRelativeDate(-2), weekId: 3, userId: 'collins', type: 'Daily',
-    learned: 'Pandas merge vs join.',
-    confused: 'Index alignment issues.',
-    fixed: 'Reset index before merging.',
-    takeaway: 'Merge on columns, Join on index.',
-    tags: ['Pandas']
-  }
-];
+// Empty Initial State
+const MOCK_LOGS: StudyLog[] = [];
+const MOCK_SCORES: WeeklyScore[] = [];
+const MOCK_JOURNAL: JournalEntry[] = [];
+const INITIAL_DOC_ENTRIES: DocEntry[] = [];
 
 const INITIAL_CAPSTONE: CapstoneState[] = INITIAL_USERS.map(u => ({
   userId: u.id,
@@ -209,29 +183,6 @@ const INITIAL_CAPSTONE: CapstoneState[] = INITIAL_USERS.map(u => ({
     [dim]: { status: 'Weak', evidence: [] }
   }), {} as Record<ReadinessDimension, any>)
 }));
-
-INITIAL_CAPSTONE[0].dimensions["Data Cleaning"] = { status: 'Strong', evidence: ['https://github.com/collins/cleaning-script.py'] };
-INITIAL_CAPSTONE[0].dimensions["Analysis"] = { status: 'Developing', evidence: [] };
-INITIAL_CAPSTONE[0].dimensions["Visualization"] = { status: 'Developing', evidence: ['https://public.tableau.com/app/profile/collins'] };
-
-// Initial Documentation Entries
-const INITIAL_DOC_ENTRIES: DocEntry[] = [
-  {
-    id: 'd1',
-    userId: 'collins',
-    title: 'PostgreSQL Environment Setup',
-    category: 'SQL',
-    dimensions: ['Data Sourcing'],
-    summary: 'Configured local PGAdmin instance and connected to AWS RDS replica.',
-    evidenceLinks: ['https://github.com/collins/infra-setup'],
-    status: 'Developing',
-    justification: 'Environment is active, but automation scripts are not yet written.',
-    reflection: 'Need to look into Dockerizing this next week for portability.',
-    timestamp: getRelativeDate(-20),
-    lastUpdated: getRelativeDate(-20),
-    revisionCount: 1
-  }
-];
 
 enum Tab {
   DASHBOARD = 'dashboard',
@@ -256,7 +207,9 @@ const App: React.FC = () => {
   const [users, setUsers] = useLocalStorage<User[]>('lo_users', INITIAL_USERS);
   const [currentUserId, setCurrentUserId] = useLocalStorage<string>('lo_current_user_id', INITIAL_USERS[0].id);
 
-  const [modules, setModules] = useLocalStorage<WeekModule[]>('lo_modules', INITIAL_MODULES);
+  // We used to store 'lo_modules', but changed data structure, so use 'lo_modules_v2'
+  const [modules, setModules] = useLocalStorage<WeekModule[]>('lo_modules_v2', INITIAL_MODULES);
+
   const [logs, setLogs] = useLocalStorage<StudyLog[]>('lo_logs', MOCK_LOGS);
   const [scores, setScores] = useLocalStorage<WeeklyScore[]>('lo_scores', MOCK_SCORES);
   const [journalEntries, setJournalEntries] = useLocalStorage<JournalEntry[]>('lo_journal', MOCK_JOURNAL);
@@ -283,7 +236,7 @@ const App: React.FC = () => {
 
   // --- DEMO ACTIONS ---
   const handleResetData = () => {
-    if (confirm("Reset all data to default demo state? This cannot be undone.")) {
+    if (confirm("Reset all data to a clean state (Day 0)? This cannot be undone.")) {
       localStorage.clear();
       window.location.reload();
     }
@@ -344,7 +297,6 @@ const App: React.FC = () => {
   };
 
   // --- LOGIC HELPERS ---
-  // Calculates the current active module based on start date
   const getCurrentModule = () => {
     const today = new Date().toISOString().split('T')[0];
     const active = modules.filter(m => m.startDate && m.startDate <= today);
@@ -371,35 +323,45 @@ const App: React.FC = () => {
 
     updatedModules.forEach((module: WeekModule) => {
       module.items.forEach((item: TaskItem) => {
-        if (item.type === 'Compensation') return;
+        // We only check accountability for items without an assignee OR items assigned to a user
+        users.forEach(user => {
+          if (item.assigneeId && item.assigneeId !== user.id) return;
 
-        // Check Late
-        if (item.dueDate && item.dueDate < todayStr && item.status !== Status.COMPLETED) {
-          foundLateTasks.push(item);
-          missedCounts[item.ownerId]++;
+          const userProgress = item.progress[user.id] || { status: Status.NOT_STARTED };
 
-          // Auto-generate Compensation Task
-          const compId = `comp-${item.id}`;
-          const alreadyExists = module.items.find((i: TaskItem) => i.id === compId);
+          // Check Late
+          if (item.dueDate && item.dueDate < todayStr && userProgress.status !== Status.COMPLETED) {
+            // To avoid duplication in the 'found' list which feeds the panel
+            if (!foundLateTasks.find(t => t.id === item.id)) {
+              foundLateTasks.push(item);
+            }
+            missedCounts[user.id]++;
 
-          if (!alreadyExists) {
-            module.items.push({
-              id: compId,
-              title: `Compensation: ${item.title}`,
-              type: 'Compensation',
-              status: Status.NOT_STARTED,
-              ownerId: item.ownerId,
-              dueDate: getRelativeDate(1),
-              originalTaskId: item.id
-            });
-            modulesChanged = true;
+            // Auto-generate Compensation Task for THIS user
+            const compId = `comp-${item.id}-${user.id}`;
+            const alreadyExists = module.items.find((i: TaskItem) => i.id === compId);
+
+            if (!alreadyExists && item.type !== 'Compensation') {
+              module.items.push({
+                id: compId,
+                title: `Compensation: ${item.title} (${user.name})`,
+                type: 'Compensation',
+                assigneeId: user.id, // Assigned ONLY to the offender
+                progress: initProgress(), // Initialize for everyone but only owner sees it
+                dueDate: getRelativeDate(1),
+                originalTaskId: item.id
+              });
+              modulesChanged = true;
+            }
           }
-        }
 
-        // Check Upcoming
-        if (item.dueDate && item.dueDate >= todayStr && item.dueDate <= getRelativeDate(3) && item.status !== Status.COMPLETED) {
-          foundUpcomingTasks.push(item);
-        }
+          // Check Upcoming for CURRENT USER only for notification panel context
+          if (user.id === currentUser.id) {
+            if (item.dueDate && item.dueDate >= todayStr && item.dueDate <= getRelativeDate(3) && userProgress.status !== Status.COMPLETED) {
+              foundUpcomingTasks.push(item);
+            }
+          }
+        });
       });
     });
 
@@ -444,9 +406,11 @@ const App: React.FC = () => {
 
     modules.forEach(m => {
       m.items.forEach(t => {
-        if (t.ownerId === userId) {
+        // Include if no assignee (shared) OR assigned to user
+        if (!t.assigneeId || t.assigneeId === userId) {
           totalAssignedTasks++;
-          if (t.status === Status.COMPLETED) completedTasks++;
+          const status = t.progress[userId]?.status || Status.NOT_STARTED;
+          if (status === Status.COMPLETED) completedTasks++;
         }
       });
     });
@@ -644,6 +608,7 @@ const App: React.FC = () => {
             lateTasks={lateTasks}
             upcomingTasks={upcomingTasks}
             users={users}
+            currentUser={currentUser}
         />
 
         {/* Settings Modal */}
@@ -735,3 +700,4 @@ const NavButton = ({ active, onClick, icon: Icon, label }: any) => (
 );
 
 export default App;
+
