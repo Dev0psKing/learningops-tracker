@@ -29,14 +29,18 @@ export interface Evidence {
   submittedAt: string;
 }
 
+export interface TaskProgress {
+  status: Status;
+  evidence?: Evidence;
+}
+
 export interface TaskItem {
   id: string;
   title: string;
   type: 'Topic' | 'Task' | 'Project' | 'Compensation';
-  status: Status;
-  ownerId: string; // 'collins' | 'sophia'
   dueDate?: string;
-  evidence?: Evidence;
+  assigneeId?: string; // If set, only this user sees/does it (e.g. for Compensation tasks)
+  progress: Record<string, TaskProgress>; // userId -> Progress
   originalTaskId?: string; // For compensation tasks
 }
 
