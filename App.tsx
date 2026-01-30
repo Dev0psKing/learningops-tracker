@@ -9,9 +9,10 @@ import NotificationPanel from './components/NotificationPanel';
 import LandingPage from './components/LandingPage';
 import Documentation from './components/Documentation';
 import SystemGuide from './components/SystemGuide';
+import RetentionEngine from './components/RetentionEngine';
 import useLocalStorage from './hooks/useLocalStorage';
-import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload } from './components/Icons';
-import { UserStats, WeekModule, StudyLog, User, Status, WeeklyScore, Notification, TaskItem, JournalEntry, CapstoneState, ReadinessDimensions, ReadinessDimension, Difficulty, DocEntry } from './types';
+import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload, Layers } from './components/Icons';
+import { UserStats, WeekModule, StudyLog, User, Status, WeeklyScore, Notification, TaskItem, JournalEntry, CapstoneState, ReadinessDimensions, ReadinessDimension, Difficulty, DocEntry, Flashcard } from './types';
 
 // --- HELPERS ---
 const getRelativeDate = (daysOffset: number) => {
@@ -175,6 +176,7 @@ const MOCK_LOGS: StudyLog[] = [];
 const MOCK_SCORES: WeeklyScore[] = [];
 const MOCK_JOURNAL: JournalEntry[] = [];
 const INITIAL_DOC_ENTRIES: DocEntry[] = [];
+const INITIAL_FLASHCARDS: Flashcard[] = [];
 
 const INITIAL_CAPSTONE: CapstoneState[] = INITIAL_USERS.map(u => ({
   userId: u.id,
@@ -190,6 +192,7 @@ enum Tab {
   TRACKER = 'tracker',
   SCORECARD = 'scorecard',
   JOURNAL = 'journal',
+  RETENTION = 'retention',
   CAPSTONE = 'capstone',
   DOCUMENTATION = 'documentation',
   GUIDE = 'guide'
@@ -215,6 +218,7 @@ const App: React.FC = () => {
   const [journalEntries, setJournalEntries] = useLocalStorage<JournalEntry[]>('lo_journal', MOCK_JOURNAL);
   const [capstoneState, setCapstoneState] = useLocalStorage<CapstoneState[]>('lo_capstone', INITIAL_CAPSTONE);
   const [docEntries, setDocEntries] = useLocalStorage<DocEntry[]>('lo_documentation', INITIAL_DOC_ENTRIES);
+  const [flashcards, setFlashcards] = useLocalStorage<Flashcard[]>('lo_flashcards', INITIAL_FLASHCARDS);
 
   // Transient
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -251,6 +255,7 @@ const App: React.FC = () => {
       journalEntries,
       capstoneState,
       docEntries,
+      flashcards,
       timestamp: new Date().toISOString()
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -282,6 +287,7 @@ const App: React.FC = () => {
             setJournalEntries(data.journalEntries || []);
             setCapstoneState(data.capstoneState || []);
             setDocEntries(data.docEntries || []);
+            setFlashcards(data.flashcards || []);
             alert('Data imported successfully!');
             setIsSettingsOpen(false);
           }
@@ -477,6 +483,7 @@ const App: React.FC = () => {
             <NavButton active={activeTab === Tab.TRACKER} onClick={() => setActiveTab(Tab.TRACKER)} icon={Activity} label="Tracker" />
             <NavButton active={activeTab === Tab.SCORECARD} onClick={() => setActiveTab(Tab.SCORECARD)} icon={Target} label="Scorecard" />
             <NavButton active={activeTab === Tab.JOURNAL} onClick={() => setActiveTab(Tab.JOURNAL)} icon={Notebook} label="Journal" />
+            <NavButton active={activeTab === Tab.RETENTION} onClick={() => setActiveTab(Tab.RETENTION)} icon={Layers} label="Retention" />
             <NavButton active={activeTab === Tab.CAPSTONE} onClick={() => setActiveTab(Tab.CAPSTONE)} icon={Briefcase} label="Capstone" />
             <NavButton active={activeTab === Tab.DOCUMENTATION} onClick={() => setActiveTab(Tab.DOCUMENTATION)} icon={FileText} label="Evidence Log" />
 
@@ -546,6 +553,7 @@ const App: React.FC = () => {
                 {activeTab === Tab.TRACKER && 'Activity Log'}
                 {activeTab === Tab.SCORECARD && 'Success Scorecard'}
                 {activeTab === Tab.JOURNAL && 'Learning Journal'}
+                {activeTab === Tab.RETENTION && 'Spaced Repetition'}
                 {activeTab === Tab.CAPSTONE && 'Capstone & Job Readiness'}
                 {activeTab === Tab.DOCUMENTATION && 'Documentation & Evidence'}
                 {activeTab === Tab.GUIDE && 'System Documentation'}
@@ -584,7 +592,11 @@ const App: React.FC = () => {
             )}
 
             {activeTab === Tab.JOURNAL && (
-                <Journal entries={journalEntries} setEntries={setJournalEntries} currentUser={currentUser} users={users} modules={modules} />
+                <Journal entries={journalEntries} setEntries={setJournalEntries} currentUser={currentUser} users={users} modules={modules} setFlashcards={setFlashcards} />
+            )}
+
+            {activeTab === Tab.RETENTION && (
+                <RetentionEngine currentUser={currentUser} cards={flashcards} setCards={setFlashcards} />
             )}
 
             {activeTab === Tab.CAPSTONE && (
@@ -700,4 +712,3 @@ const NavButton = ({ active, onClick, icon: Icon, label }: any) => (
 );
 
 export default App;
-

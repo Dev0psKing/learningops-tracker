@@ -153,3 +153,17 @@ export interface DocEntry {
   revisionCount: number;
 }
 
+// --- RETENTION ENGINE (SRS) TYPES ---
+
+export type FlashcardBox = 1 | 2 | 3 | 4 | 5;
+
+export interface Flashcard {
+  id: string;
+  userId: string;
+  front: string; // The Question / Concept
+  back: string;  // The Answer / Definition
+  box: FlashcardBox; // Leitner Box (1-5)
+  nextReviewDate: string; // ISO Date String (YYYY-MM-DD)
+  lastReviewed?: string;
+  tags: string[];
+}

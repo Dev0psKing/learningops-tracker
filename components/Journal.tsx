@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { JournalEntry, User, WeekModule } from '../types';
-import { LinkIcon, HelpCircle, Edit } from './Icons';
+import { JournalEntry, User, WeekModule, Flashcard } from '../types';
+import { LinkIcon, HelpCircle, Edit, Layers } from './Icons';
 import { SimpleMarkdown } from './SimpleMarkdown';
 import useLocalStorage from '../hooks/useLocalStorage';
 
@@ -10,9 +10,10 @@ interface JournalProps {
   currentUser: User;
   users: User[];
   modules: WeekModule[];
+  setFlashcards: React.Dispatch<React.SetStateAction<Flashcard[]>>;
 }
 
-const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, users, modules }) => {
+const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, users, modules, setFlashcards }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWeekFilter, setSelectedWeekFilter] = useState<number | 'All'>('All');
@@ -92,6 +93,22 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
 
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCreateFlashcard = (entry: JournalEntry) => {
+    if (confirm("Create a flashcard from this entry? The 'Learnings' will be the Question, and 'Fixes/Resolution' will be the Answer.")) {
+      const card: Flashcard = {
+        id: `card-${Date.now()}`,
+        userId: currentUser.id,
+        front: entry.learned.substring(0, 300) + (entry.learned.length > 300 ? '...' : ''), // Truncate slightly if massive
+        back: entry.fixed || entry.confused || "Review Journal Entry " + entry.date,
+        box: 1,
+        nextReviewDate: new Date().toISOString().split('T')[0],
+        tags: entry.tags
+      };
+      setFlashcards(prev => [...prev, card]);
+      alert("Flashcard added to Retention Engine!");
+    }
   };
 
   const resetForm = () => {
@@ -286,13 +303,22 @@ const Journal: React.FC<JournalProps> = ({ entries, setEntries, currentUser, use
                         )}
 
                         {currentUser.id === entry.userId && (
-                            <button
-                                onClick={() => handleEdit(entry)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                                title="Edit Entry"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
+                            <>
+                              <button
+                                  onClick={() => handleCreateFlashcard(entry)}
+                                  className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                                  title="Convert to Flashcard"
+                              >
+                                <Layers className="w-4 h-4" />
+                              </button>
+                              <button
+                                  onClick={() => handleEdit(entry)}
+                                  className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                                  title="Edit Entry"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            </>
                         )}
                       </div>
                     </div>
