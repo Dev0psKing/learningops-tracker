@@ -1,255 +1,144 @@
-import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line, ReferenceLine, Legend } from 'recharts';
-import { UserStats, User, WeekModule, WeeklyScore, Status } from '../types';
-import { Clock, CheckCircle, TrendingUp, Target } from './Icons';
+import React from 'react';
+import { Notification, TaskItem, User, Status } from '../types';
+import { AlertTriangle, Clock, Calendar, CheckCircle } from './Icons';
 
-interface DashboardProps {
-  currentUser: User;
+interface NotificationPanelProps {
+  notifications: Notification[];
+  lateTasks: TaskItem[];
+  upcomingTasks: TaskItem[];
   users: User[];
-  stats: Record<string, UserStats>;
-  modules: WeekModule[];
-  scores: WeeklyScore[];
+  currentUser: User;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-// Professional, minimalist color palette suitable for data visualization
-const COLORS = {
-  collins: '#6366f1', // Indigo 500
-  sophia: '#10b981', // Emerald 500
-  grid: '#94a3b8',   // Slate 400
-  text: '#94a3b8',   // Slate 400
-};
+const NotificationPanel: React.FC<NotificationPanelProps> = ({ 
+  notifications, 
+  lateTasks, 
+  upcomingTasks, 
+  users,
+  currentUser,
+  isOpen, 
+  onClose 
+}) => {
+  if (!isOpen) return null;
 
-/**
- * Reusable Card Component for top-level KPIs.
- */
-const StatCard = ({ title, value, subtext, icon: Icon }: any) => (
-  <div className="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{value}</h3>
-      </div>
-      <Icon className="w-5 h-5 text-slate-400" />
-    </div>
-    <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 font-medium border-t border-slate-50 dark:border-slate-700 pt-2">{subtext}</p>
-  </div>
-);
+  const getUserName = (id: string) => users.find(u => u.id === id)?.name || id;
 
-/**
- * Dashboard Component
- * 
- * Displays high-level analytics for the user:
- * 1. KPIs (Hours, Tasks, Streak, Score)
- * 2. Trend Analysis (Weekly Scores)
- * 3. Task Velocity and Completion Rates
- */
-const Dashboard: React.FC<DashboardProps> = ({ currentUser, users, stats, modules, scores }) => {
-  const myStats = stats[currentUser.id] || { totalHours: 0, completedTasks: 0, currentStreak: 0, completionRate: 0 };
-
-  // --- Data Transformation Memoization ---
-
-  // 1. Calculate Weekly Score Trend over time (Quality)
-  const scoreTrendData = useMemo(() => {
-    // Get all unique week IDs from scores
-    const weekIds = Array.from(new Set(scores.map(s => s.weekId))).sort((a: number, b: number) => a - b);
-    if (weekIds.length === 0) return [];
-
-    return weekIds.map(weekId => {
-      const collinsScore = scores.find(s => s.weekId === weekId && s.userId === 'collins')?.total || 0;
-      const sophiaScore = scores.find(s => s.weekId === weekId && s.userId === 'sophia')?.total || 0;
-      return {
-        name: `W${weekId}`,
-        collins: collinsScore,
-        sophia: sophiaScore
-      };
+  // Helper to determine who is responsible for a late task displayed in the panel
+  const getLateLabel = (task: TaskItem) => {
+    if (task.assigneeId) {
+        return getUserName(task.assigneeId);
+    }
+    // If shared, check who hasn't finished it
+    const incompleteUsers = users.filter(u => {
+        const status = task.progress[u.id]?.status || Status.NOT_STARTED;
+        return status !== Status.COMPLETED;
     });
-  }, [scores]);
 
-  // 2. Calculate Missed Tasks per Week (Debt)
-  const missedTasksData = useMemo(() => {
-    return modules.map(m => {
-      // Calculate missed tasks for Collins
-      const collinsMissed = m.items.filter(i => {
-         // Skip if assigned to someone else
-         if (i.assigneeId && i.assigneeId !== 'collins') return false;
-         
-         const status = i.progress['collins']?.status || Status.NOT_STARTED;
-         const isLate = i.dueDate && new Date(i.dueDate) < new Date() && status !== Status.COMPLETED;
-         return isLate;
-      }).length;
-
-      // Calculate missed tasks for Sophia
-      const sophiaMissed = m.items.filter(i => {
-         if (i.assigneeId && i.assigneeId !== 'sophia') return false;
-         
-         const status = i.progress['sophia']?.status || Status.NOT_STARTED;
-         const isLate = i.dueDate && new Date(i.dueDate) < new Date() && status !== Status.COMPLETED;
-         return isLate;
-      }).length;
-
-      return {
-        name: `W${m.id}`,
-        collins: collinsMissed,
-        sophia: sophiaMissed
-      };
-    });
-  }, [modules]);
-
-  // 3. Calculate Completion Velocity (Speed)
-  const completionRateData = useMemo(() => {
-    return modules.map(m => {
-      let collinsTotal = 0, collinsCompleted = 0;
-      let sophiaTotal = 0, sophiaCompleted = 0;
-
-      m.items.forEach(i => {
-        // Collins Stats: Shared tasks OR specific assignments
-        if (!i.assigneeId || i.assigneeId === 'collins') {
-            collinsTotal++;
-            const status = i.progress['collins']?.status || Status.NOT_STARTED;
-            if (status === Status.COMPLETED) collinsCompleted++;
-        }
-
-        // Sophia Stats
-        if (!i.assigneeId || i.assigneeId === 'sophia') {
-            sophiaTotal++;
-            const status = i.progress['sophia']?.status || Status.NOT_STARTED;
-            if (status === Status.COMPLETED) sophiaCompleted++;
-        }
-      });
-      
-      return {
-        name: `W${m.id}`,
-        collins: collinsTotal === 0 ? 0 : Math.round((collinsCompleted / collinsTotal) * 100),
-        sophia: sophiaTotal === 0 ? 0 : Math.round((sophiaCompleted / sophiaTotal) * 100)
-      };
-    });
-  }, [modules]);
-
-  // Determine Average Score
-  const myScores = scores.filter(s => s.userId === currentUser.id);
-  const avgScore = myScores.length > 0 
-    ? (myScores.reduce((acc, s) => acc + s.total, 0) / myScores.length).toFixed(1) 
-    : '0.0';
+    if (incompleteUsers.length === users.length) return "Everyone";
+    return incompleteUsers.map(u => u.name).join(', ');
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      
-      {/* Top Row: Personal KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Hours Logged" 
-          value={myStats.totalHours.toFixed(1)} 
-          subtext="Total cumulative study time" 
-          icon={Clock} 
-        />
-        <StatCard 
-          title="Tasks Completed" 
-          value={myStats.completedTasks} 
-          subtext={`Global completion rate: ${myStats.completionRate}%`} 
-          icon={CheckCircle} 
-        />
-        <StatCard 
-          title="Consistency Streak" 
-          value={`${myStats.currentStreak} Days`} 
-          subtext="Consecutive days of activity" 
-          icon={TrendingUp} 
-        />
-        <StatCard 
-          title="Avg. Weekly Score" 
-          value={avgScore} 
-          subtext="Target: 16.0+" 
-          icon={Target} 
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Performance Score Trend */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded border border-slate-200 dark:border-slate-700 transition-colors">
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">Performance Score Trend</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Weekly self-assessment (Mastery + Output + Consistency)</p>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={scoreTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorCollins" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.collins} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={COLORS.collins} stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorSophia" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.sophia} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={COLORS.sophia} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} strokeOpacity={0.2} />
-                <XAxis dataKey="name" stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 20]} stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9', borderRadius: '6px' }} 
-                  itemStyle={{ fontSize: '12px' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                <ReferenceLine y={16} stroke={COLORS.sophia} strokeDasharray="3 3" label={{ value: 'Target', position: 'right', fill: COLORS.sophia, fontSize: 10 }} />
-                <Area type="monotone" dataKey="collins" name="Collins" stroke={COLORS.collins} fillOpacity={1} fill="url(#colorCollins)" />
-                <Area type="monotone" dataKey="sophia" name="Sophia" stroke={COLORS.sophia} fillOpacity={1} fill="url(#colorSophia)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+    <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Accountability Center</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
 
-        {/* Task Velocity */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded border border-slate-200 dark:border-slate-700 transition-colors">
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">Velocity / Completion Rate</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Percentage of weekly syllabus completed</p>
+        {/* Alerts Section */}
+        {notifications.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Intervention Alerts</h3>
+            <div className="space-y-3">
+              {notifications.map(notif => (
+                <div key={notif.id} className={`p-4 rounded-xl border flex items-start gap-3 ${
+                  notif.type === 'alert' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800 text-rose-800 dark:text-rose-300' : 
+                  notif.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800 text-amber-800 dark:text-amber-300' : 
+                  'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-800 dark:text-blue-300'
+                }`}>
+                  <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                     notif.type === 'alert' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
+                  }`} />
+                  <div>
+                    <h4 className="font-bold text-sm">{notif.title}</h4>
+                    <p className="text-xs mt-1 opacity-90">{notif.message}</p>
+                    {notif.actionRequired && (
+                        <div className="mt-2 text-xs font-bold uppercase px-2 py-1 bg-white/50 dark:bg-black/20 rounded w-fit">Action Required</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={completionRateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} strokeOpacity={0.2} />
-                <XAxis dataKey="name" stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} unit="%" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9', borderRadius: '6px' }} 
-                  itemStyle={{ fontSize: '12px' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                <Line type="monotone" dataKey="collins" name="Collins" stroke={COLORS.collins} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="sophia" name="Sophia" stroke={COLORS.sophia} strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+        )}
+
+        {/* Late Tasks Section */}
+        <div className="mb-8">
+           <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Missed / Late</h3>
+              <span className="bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{lateTasks.length}</span>
+           </div>
+           
+           {lateTasks.length === 0 ? (
+             <div className="text-sm text-slate-500 italic flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500"/> All tasks on track!
+             </div>
+           ) : (
+             <div className="space-y-2">
+               {lateTasks.map(task => (
+                 <div key={task.id} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm border-l-4 border-l-rose-500 dark:border-l-rose-500">
+                    <div className="flex justify-between items-start">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">
+                          {task.title.replace(/\s*\([^)]*\)/g, "").trim()}
+                        </p>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">
+                           Late: {getLateLabel(task)}
+                        </span>
+                        <span className="text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> Due {task.dueDate}
+                        </span>
+                    </div>
+                 </div>
+               ))}
+             </div>
+           )}
         </div>
 
-        {/* Outstanding Tasks (Debt) */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded border border-slate-200 dark:border-slate-700 transition-colors lg:col-span-2">
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">Outstanding Tasks (Technical Debt)</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Overdue or incomplete items per week. Keep this low.</p>
-          </div>
-          <div className="h-48">
-             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={missedTasksData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} strokeOpacity={0.2} />
-                 <XAxis dataKey="name" stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} />
-                 <YAxis stroke={COLORS.text} fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                 <Tooltip 
-                   cursor={{ fill: '#334155', opacity: 0.1 }}
-                   contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9', borderRadius: '6px' }} 
-                   itemStyle={{ fontSize: '12px' }}
-                 />
-                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                 <Bar dataKey="collins" name="Collins" fill={COLORS.collins} radius={[4, 4, 0, 0]} barSize={20} />
-                 <Bar dataKey="sophia" name="Sophia" fill={COLORS.sophia} radius={[4, 4, 0, 0]} barSize={20} />
-               </BarChart>
-             </ResponsiveContainer>
-          </div>
+        {/* Upcoming Deadlines (For Current User) */}
+        <div>
+           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">My Upcoming (3 Days)</h3>
+           <div className="space-y-2">
+             {upcomingTasks.map(task => (
+                 <div key={task.id} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">
+                      {task.title.replace(/\s*\([^)]*\)/g, "").trim()}
+                    </p>
+                    <div className="flex justify-between items-center mt-2">
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">
+                          {task.assigneeId ? 'Assigned to you' : 'Shared Task'}
+                        </span>
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {task.dueDate}
+                        </span>
+                    </div>
+                 </div>
+             ))}
+             {upcomingTasks.length === 0 && (
+                <p className="text-sm text-slate-500 dark:text-slate-500 italic">No immediate deadlines.</p>
+             )}
+           </div>
         </div>
+
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default NotificationPanel;
