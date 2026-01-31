@@ -237,6 +237,11 @@ const App: React.FC = () => {
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
 
+  // --- ERROR/SUCCESS NOTIFICATION HELPERS ---
+  const onNotify = (type: 'success' | 'error' | 'info', message: string) => {
+    setSystemMessage({ type, text: message });
+  };
+
   // --- THEME EFFECT ---
   useEffect(() => {
     if (theme === 'dark') {
@@ -407,338 +412,378 @@ const App: React.FC = () => {
         setSystemMessage({ type: 'error', text: 'Import processing error: ' + err.message });
       }
     };
+
     reader.readAsText(file);
   };
 
-  // --- LOGIC HELPERS ---
-  const getCurrentModule = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const active = modules.filter(m => m.startDate && m.startDate <= today);
-    return active.length > 0 ? active[active.length - 1] : modules[0];
-  };
+  // --- RULES ENGINE (Calculations) ---
+  const stats = React.useMemo(() => {
+    const userStats: Record<string, UserStats> = {};
 
-  const currentModule = getCurrentModule();
+    users.forEach(u => {
+      const userLogs = logs.filter(l => l.userId === u.id);
+      const totalHours = userLogs.reduce((acc, l) => acc + l.hours, 0);
 
-  // --- RULES ENGINE ---
-  useEffect(() => {
-    runAccountabilityRules();
-  }, [modules, journalEntries, currentUser]);
+      // Calculate Completed Tasks
+      let completedTasks = 0;
+      let totalTasks = 0;
+      modules.forEach(m => m.items.forEach(i => {
+        if (!i.assigneeId || i.assigneeId === u.id) {
+          totalTasks++;
+          if (i.progress[u.id]?.status === Status.COMPLETED) completedTasks++;
+        }
+      }));
 
-  const runAccountabilityRules = () => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const newNotifications: Notification[] = [];
-    const foundLateTasks: TaskItem[] = [];
-    const foundUpcomingTasks: TaskItem[] = [];
-    const missedCounts: Record<string, number> = { collins: 0, sophia: 0 };
-
-    const updatedModules = JSON.parse(JSON.stringify(modules));
-    let modulesChanged = false;
-
-    updatedModules.forEach((module: WeekModule) => {
-      module.items.forEach((item: TaskItem) => {
-        // We only check accountability for items without an assignee OR items assigned to a user
-        users.forEach(user => {
-          if (item.assigneeId && item.assigneeId !== user.id) return;
-
-          const userProgress = item.progress[user.id] || { status: Status.NOT_STARTED };
-
-          // Check Late
-          if (item.dueDate && item.dueDate < todayStr && userProgress.status !== Status.COMPLETED) {
-            // To avoid duplication in the 'found' list which feeds the panel
-            if (!foundLateTasks.find(t => t.id === item.id)) {
-              foundLateTasks.push(item);
-            }
-            missedCounts[user.id]++;
-
-            // Auto-generate Compensation Task for THIS user
-            const compId = `comp-${item.id}-${user.id}`;
-            const alreadyExists = module.items.find((i: TaskItem) => i.id === compId);
-
-            if (!alreadyExists && item.type !== 'Compensation') {
-              module.items.push({
-                id: compId,
-                title: `Compensation: ${item.title} (${user.name})`,
-                type: 'Compensation',
-                assigneeId: user.id, // Assigned ONLY to the offender
-                progress: initProgress(), // Initialize for everyone but only owner sees it
-                dueDate: getRelativeDate(1),
-                originalTaskId: item.id
-              });
-              modulesChanged = true;
-            }
-          }
-
-          // Check Upcoming for CURRENT USER only for notification panel context
-          if (user.id === currentUser.id) {
-            if (item.dueDate && item.dueDate >= todayStr && item.dueDate <= getRelativeDate(3) && userProgress.status !== Status.COMPLETED) {
-              foundUpcomingTasks.push(item);
-            }
-          }
-        });
-      });
-    });
-
-    Object.entries(missedCounts).forEach(([userId, count]) => {
-      if (count >= 2) {
-        newNotifications.push({
-          id: `alert-${userId}-${todayStr}`,
-          type: 'alert',
-          title: 'Velocity Alert',
-          message: `${users.find(u => u.id === userId)?.name || userId} has ${count} overdue items.`,
-          timestamp: new Date().toISOString(),
-          actionRequired: true
-        });
+      // Calculate Streak
+      const today = new Date();
+      let streak = 0;
+      const dates = new Set(userLogs.map(l => l.date));
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        if (dates.has(dateStr)) streak++;
+        else if (i > 0) break; // Break if missed a day (allow today to be missed if i=0)
       }
+
+      userStats[u.id] = {
+        totalHours,
+        completedTasks,
+        currentStreak: streak,
+        completionRate: totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100)
+      };
     });
 
-    if (foundLateTasks.length > 0) {
-      newNotifications.push({
-        id: `info-comp-${todayStr}`,
-        type: 'warning',
-        title: 'Compensation Tasks Active',
-        message: `${foundLateTasks.length} tasks overdue. Remedial work assigned.`,
-        timestamp: new Date().toISOString()
-      });
-    }
+    return userStats;
+  }, [logs, modules, users]);
 
-    if (modulesChanged) {
-      setModules(updatedModules);
-    }
+  // --- NOTIFICATION & TASK ALERTS ---
+  useEffect(() => {
+    const newNotifs: Notification[] = [];
+    const late: TaskItem[] = [];
+    const upcoming: TaskItem[] = [];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
 
-    setNotifications(newNotifications);
-    setLateTasks(foundLateTasks);
-    setUpcomingTasks(foundUpcomingTasks);
-  };
-
-  const calculateStats = (userId: string): UserStats => {
-    const userLogs = logs.filter(l => l.userId === userId);
-    const totalHours = userLogs.reduce((acc, l) => acc + l.hours, 0);
-
-    let completedTasks = 0;
-    let totalAssignedTasks = 0;
-
+    // Check Tasks
     modules.forEach(m => {
       m.items.forEach(t => {
-        // Include if no assignee (shared) OR assigned to user
-        if (!t.assigneeId || t.assigneeId === userId) {
-          totalAssignedTasks++;
-          const status = t.progress[userId]?.status || Status.NOT_STARTED;
-          if (status === Status.COMPLETED) completedTasks++;
+        if (!t.dueDate) return;
+
+        const isMyTask = !t.assigneeId || t.assigneeId === currentUser.id;
+        const myStatus = t.progress[currentUser.id]?.status || Status.NOT_STARTED;
+
+        // Late Check
+        if (t.dueDate < today && myStatus !== Status.COMPLETED && isMyTask) {
+          late.push(t);
+        }
+
+        // Upcoming Check
+        const diffTime = new Date(t.dueDate).getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 3 && myStatus !== Status.COMPLETED && isMyTask) {
+          upcoming.push(t);
         }
       });
     });
 
-    // Dynamic Streak Calculation
-    let currentStreak = 0;
-    const uniqueDates = Array.from(new Set(userLogs.map(l => l.date))).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
-    if (uniqueDates.length > 0) {
-      const today = new Date().toISOString().split('T')[0];
-      const yesterdayDate = new Date();
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterday = yesterdayDate.toISOString().split('T')[0];
-
-      // Check if streak is active (logged today or yesterday)
-      if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
-        currentStreak = 1;
-        for (let i = 0; i < uniqueDates.length - 1; i++) {
-          const curr = new Date(uniqueDates[i]);
-          const prev = new Date(uniqueDates[i+1]);
-          const diffTime = Math.abs(curr.getTime() - prev.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays === 1) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
-      }
+    // Generate Notifications based on Rules
+    if (late.length > 0) {
+      newNotifs.push({
+        id: 'late-alert',
+        type: 'alert',
+        title: 'Velocity Alert',
+        message: `You have ${late.length} overdue tasks. This is creating technical debt.`,
+        timestamp: today,
+        actionRequired: true
+      });
     }
 
-    return {
-      totalHours,
-      completedTasks,
-      currentStreak,
-      completionRate: totalAssignedTasks === 0 ? 0 : Math.round((completedTasks / totalAssignedTasks) * 100)
-    };
-  };
+    if (stats[currentUser.id]?.currentStreak > 3) {
+      newNotifs.push({
+        id: 'streak-info',
+        type: 'info',
+        title: 'Consistency Streak',
+        message: `You are on a ${stats[currentUser.id].currentStreak} day streak. Keep pushing!`,
+        timestamp: today
+      });
+    }
 
-  const stats = {
-    collins: calculateStats('collins'),
-    sophia: calculateStats('sophia')
-  };
+    setNotifications(newNotifs);
+    setLateTasks(late);
+    setUpcomingTasks(upcoming);
+  }, [modules, stats, currentUser.id]);
 
   if (showLanding) {
     return <LandingPage onEnter={() => setShowLanding(false)} onReset={handleResetData} />;
   }
 
+  // Sidebar Menu Configuration
+  const MENU_ITEMS = [
+    { id: Tab.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+    { id: Tab.SYLLABUS, label: 'Roadmap', icon: BookOpen },
+    { id: Tab.TRACKER, label: 'Tracker', icon: Activity },
+    { id: Tab.SCORECARD, label: 'Scorecard', icon: Target },
+    { id: Tab.JOURNAL, label: 'Journal', icon: Notebook },
+    { id: Tab.RETENTION, label: 'Retention', icon: Layers },
+    { id: Tab.CAPSTONE, label: 'Capstone', icon: Briefcase },
+    { id: Tab.DOCUMENTATION, label: 'Evidence Log', icon: FileText },
+    { id: Tab.ANALYST, label: 'Neural Analyst', icon: Sparkles },
+    { id: Tab.GUIDE, label: 'System Guide', icon: HelpCircle },
+  ];
+
   return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+      <div className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden">
 
-        {/* --- SYSTEM MESSAGE BANNER --- */}
-        {systemMessage && (
-            <div className={`fixed top-0 left-0 right-0 z-[100] px-4 py-2 text-center text-sm font-bold shadow-lg animate-fade-in ${
-                systemMessage.type === 'success' ? 'bg-emerald-500 text-white' :
-                    systemMessage.type === 'error' ? 'bg-rose-600 text-white' : 'bg-blue-500 text-white'
-            }`}>
-              {systemMessage.type === 'success' && <CheckCircle className="w-4 h-4 inline mr-2 -mt-0.5" />}
-              {systemMessage.type === 'error' && <AlertTriangle className="w-4 h-4 inline mr-2 -mt-0.5" />}
-              {systemMessage.text}
-            </div>
-        )}
-
-        {/* Sidebar - Updated with scroll and responsive footer */}
-        <aside className="w-20 lg:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col fixed inset-y-0 z-10 transition-all duration-300 border-r border-slate-800 overflow-y-auto">
-          <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => setShowLanding(true)}>
-            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
-              LO
-            </div>
-            <span className="font-bold text-lg hidden lg:block tracking-tight">LearningOps</span>
+        {/* --- SIDEBAR --- */}
+        <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 border-r border-slate-800">
+          <div className="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">LO</div>
+            <span className="font-bold text-white tracking-tight text-lg">LearningOps</span>
           </div>
 
-          <nav className="flex-1 px-4 space-y-2 mt-6">
-            <NavButton active={activeTab === Tab.DASHBOARD} onClick={() => setActiveTab(Tab.DASHBOARD)} icon={LayoutDashboard} label="Dashboard" />
-            <NavButton active={activeTab === Tab.SYLLABUS} onClick={() => setActiveTab(Tab.SYLLABUS)} icon={BookOpen} label="Roadmap" />
-            <NavButton active={activeTab === Tab.TRACKER} onClick={() => setActiveTab(Tab.TRACKER)} icon={Activity} label="Tracker" />
-            <NavButton active={activeTab === Tab.SCORECARD} onClick={() => setActiveTab(Tab.SCORECARD)} icon={Target} label="Scorecard" />
-            <NavButton active={activeTab === Tab.JOURNAL} onClick={() => setActiveTab(Tab.JOURNAL)} icon={Notebook} label="Journal" />
-            <NavButton active={activeTab === Tab.RETENTION} onClick={() => setActiveTab(Tab.RETENTION)} icon={Layers} label="Retention" />
-            <NavButton active={activeTab === Tab.CAPSTONE} onClick={() => setActiveTab(Tab.CAPSTONE)} icon={Briefcase} label="Capstone" />
-            <NavButton active={activeTab === Tab.DOCUMENTATION} onClick={() => setActiveTab(Tab.DOCUMENTATION)} icon={FileText} label="Evidence Log" />
-
-            <div className="pt-4 mt-4 border-t border-slate-800">
-              <NavButton active={activeTab === Tab.ANALYST} onClick={() => setActiveTab(Tab.ANALYST)} icon={Sparkles} label="Neural Analyst" />
-              <NavButton active={activeTab === Tab.GUIDE} onClick={() => setActiveTab(Tab.GUIDE)} icon={HelpCircle} label="System Guide" />
-            </div>
+          <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            {MENU_ITEMS.map(item => (
+                <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as Tab)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === item.id
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'hover:bg-slate-800 hover:text-white text-slate-400'
+                    }`}
+                >
+                  <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-indigo-200' : 'text-slate-500 group-hover:text-white'}`} />
+                  {item.label}
+                </button>
+            ))}
           </nav>
 
-          {/* Bottom Profile Section - Now visible and adapted for mobile */}
           <div className="p-4 border-t border-slate-800">
-            <div className="bg-slate-800 rounded-xl p-3 mb-3 flex flex-col lg:block items-center">
-              <div className="flex justify-between items-center w-full">
-                <span className="text-[10px] font-bold text-slate-400 uppercase hidden lg:block">Theme</span>
-                <button
-                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                    className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors w-full lg:w-auto flex justify-center"
-                >
-                  {theme === 'light' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-slate-800 rounded-xl p-3">
-              <div className="hidden lg:flex justify-between items-center mb-2">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase">Switch Profile</h4>
-                <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-                >
-                  <Settings className="w-3 h-3" /> Edit
-                </button>
-              </div>
-              <div className="flex flex-col lg:flex-row gap-2">
-                {users.map(user => (
-                    <button
-                        key={user.id}
-                        onClick={() => setCurrentUserId(user.id)}
-                        className={`flex-1 p-2 rounded-lg flex flex-col items-center justify-center transition-all ${
-                            currentUser.id === user.id ? 'bg-indigo-600 shadow-md' : 'bg-slate-700 hover:bg-slate-600'
-                        }`}
-                        title={user.name}
-                    >
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                          currentUser.id === user.id ? 'bg-white text-indigo-600' : 'bg-slate-500 text-slate-200'
-                      } ${currentUser.id !== user.id ? 'mb-0' : 'mb-1 lg:mb-1'}`}>
-                        {user.avatarInitials}
-                      </div>
-                      <span className="text-[10px] font-medium truncate w-full hidden lg:block">{user.name}</span>
-                    </button>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-700 hidden lg:block">
-                <p className="text-xs text-slate-300 font-medium">{currentUser.name}</p>
-                <p className="text-[10px] text-slate-500">{currentUser.role}</p>
-              </div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">Workspace</div>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              System Operational
             </div>
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 ml-20 lg:ml-64 p-8 overflow-y-auto relative h-screen">
-          <header className="flex justify-between items-center mb-8">
+        {/* --- MAIN CONTENT WRAPPER --- */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+
+          {/* Notification Toast */}
+          {systemMessage && (
+              <div className={`absolute top-6 left-1/2 transform -translate-x-1/2 z-[60] px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 animate-fade-in ${
+                  systemMessage.type === 'success' ? 'bg-emerald-600 text-white' :
+                      systemMessage.type === 'error' ? 'bg-rose-600 text-white' :
+                          'bg-slate-800 text-white'
+              }`}>
+                {systemMessage.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                {systemMessage.type === 'error' && <AlertTriangle className="w-5 h-5" />}
+                <span className="font-medium text-sm">{systemMessage.text}</span>
+              </div>
+          )}
+
+          {/* --- HEADER --- */}
+          <header className="h-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 flex-shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {activeTab === Tab.DASHBOARD && 'Performance Overview'}
-                {activeTab === Tab.SYLLABUS && '14-Week Roadmap'}
-                {activeTab === Tab.TRACKER && 'Activity Log'}
-                {activeTab === Tab.SCORECARD && 'Success Scorecard'}
-                {activeTab === Tab.JOURNAL && 'Learning Journal'}
-                {activeTab === Tab.RETENTION && 'Spaced Repetition'}
-                {activeTab === Tab.CAPSTONE && 'Capstone & Job Readiness'}
-                {activeTab === Tab.DOCUMENTATION && 'Documentation & Evidence'}
-                {activeTab === Tab.ANALYST && 'Neural Performance Analyst'}
-                {activeTab === Tab.GUIDE && 'System Documentation'}
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Collaborative Workspace • <span className="text-indigo-600 dark:text-indigo-400 font-medium">Viewing as {currentUser.name}</span>
-              </p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {MENU_ITEMS.find(i => i.id === activeTab)?.label}
+              </h2>
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <span>Collaborative Workspace</span>
+                <span>•</span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-medium">Viewing as {currentUser.name}</span>
+              </div>
             </div>
 
-            <button
-                onClick={() => setIsNotifPanelOpen(true)}
-                className="relative p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
-            >
-              <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              {(notifications.length > 0 || lateTasks.length > 0) && (
-                  <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-              )}
-            </button>
+            <div className="flex items-center gap-6">
+              {/* User Switcher Row */}
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700">
+                {users.map(u => (
+                    <button
+                        key={u.id}
+                        onClick={() => setCurrentUserId(u.id)}
+                        title={`Switch to ${u.name}`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                            currentUser.id === u.id
+                                ? `${u.color} text-white shadow-sm ring-2 ring-white dark:ring-slate-900`
+                                : 'text-slate-500 hover:bg-white dark:hover:bg-slate-700'
+                        }`}
+                    >
+                      {u.avatarInitials}
+                    </button>
+                ))}
+              </div>
+
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+              <button
+                  onClick={() => setIsNotifPanelOpen(true)}
+                  className="relative p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                <Bell className="w-6 h-6" />
+                {(notifications.length > 0 || lateTasks.length > 0) && (
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900"></span>
+                )}
+              </button>
+
+              {/* Settings Toggle */}
+              <div className="relative">
+                <button
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <Settings className="w-6 h-6" />
+                </button>
+
+                {/* Settings Dropdown */}
+                {isSettingsOpen && (
+                    <div className="absolute top-full right-0 mt-4 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-50 animate-fade-in origin-top-right">
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">System Config</p>
+                      </div>
+
+                      <button
+                          onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setIsSettingsOpen(false); }}
+                          className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+                      >
+                        {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400"/> : <Moon className="w-4 h-4 text-indigo-400"/>}
+                        Toggle Theme
+                      </button>
+
+                      <button
+                          onClick={() => { handleExportData(); setIsSettingsOpen(false); }}
+                          className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+                      >
+                        <Download className="w-4 h-4 text-emerald-500"/>
+                        Backup Data
+                      </button>
+
+                      <label className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 cursor-pointer transition-colors">
+                        <Upload className="w-4 h-4 text-blue-500"/>
+                        Import / Sync
+                        <input
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleImportData}
+                        />
+                      </label>
+
+                      <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+
+                      <button
+                          onClick={handleResetData}
+                          className="w-full text-left px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-3 transition-colors"
+                      >
+                        <AlertTriangle className="w-4 h-4"/>
+                        Factory Reset
+                      </button>
+                    </div>
+                )}
+              </div>
+            </div>
           </header>
 
-          <div className="max-w-7xl mx-auto">
-            {activeTab === Tab.DASHBOARD && (
-                <Dashboard currentUser={currentUser} users={users} stats={stats} modules={modules} scores={scores} />
-            )}
+          {/* --- SCROLLABLE CONTENT --- */}
+          <main className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-7xl mx-auto">
+              {activeTab === Tab.DASHBOARD && (
+                  <Dashboard
+                      currentUser={currentUser}
+                      users={users}
+                      stats={stats}
+                      modules={modules}
+                      scores={scores}
+                  />
+              )}
 
-            {activeTab === Tab.SYLLABUS && (
-                <Syllabus modules={modules} setModules={setModules} currentUser={currentUser} users={users} />
-            )}
+              {activeTab === Tab.SYLLABUS && (
+                  <Syllabus
+                      modules={modules}
+                      setModules={setModules}
+                      currentUser={currentUser}
+                      users={users}
+                  />
+              )}
 
-            {activeTab === Tab.TRACKER && (
-                <Tracker logs={logs} setLogs={setLogs} currentModule={currentModule} currentUser={currentUser} />
-            )}
+              {activeTab === Tab.TRACKER && (
+                  <Tracker
+                      logs={logs}
+                      setLogs={setLogs}
+                      currentUser={currentUser}
+                      currentModule={modules.find(m => {
+                        const now = new Date().toISOString().split('T')[0];
+                        return m.startDate && m.startDate <= now && (!m.items[m.items.length-1].dueDate || m.items[m.items.length-1].dueDate! >= now);
+                      })}
+                  />
+              )}
 
-            {activeTab === Tab.SCORECARD && (
-                <Scorecard currentUser={currentUser} users={users} modules={modules} scores={scores} setScores={setScores} />
-            )}
+              {activeTab === Tab.SCORECARD && (
+                  <Scorecard
+                      currentUser={currentUser}
+                      users={users}
+                      modules={modules}
+                      scores={scores}
+                      setScores={setScores}
+                  />
+              )}
 
-            {activeTab === Tab.JOURNAL && (
-                <Journal entries={journalEntries} setEntries={setJournalEntries} currentUser={currentUser} users={users} modules={modules} setFlashcards={setFlashcards} />
-            )}
+              {activeTab === Tab.JOURNAL && (
+                  <Journal
+                      entries={journalEntries}
+                      setEntries={setJournalEntries}
+                      currentUser={currentUser}
+                      users={users}
+                      modules={modules}
+                      setFlashcards={setFlashcards}
+                  />
+              )}
 
-            {activeTab === Tab.RETENTION && (
-                <RetentionEngine currentUser={currentUser} cards={flashcards} setCards={setFlashcards} />
-            )}
+              {activeTab === Tab.DOCUMENTATION && (
+                  <Documentation
+                      entries={docEntries}
+                      setEntries={setDocEntries}
+                      currentUser={currentUser}
+                  />
+              )}
 
-            {activeTab === Tab.CAPSTONE && (
-                <CapstoneReadiness currentUser={currentUser} capstoneState={capstoneState} setCapstoneState={setCapstoneState} docEntries={docEntries} />
-            )}
+              {activeTab === Tab.CAPSTONE && (
+                  <CapstoneReadiness
+                      currentUser={currentUser}
+                      capstoneState={capstoneState}
+                      setCapstoneState={setCapstoneState}
+                      docEntries={docEntries}
+                      onNotify={onNotify}
+                  />
+              )}
 
-            {activeTab === Tab.DOCUMENTATION && (
-                <Documentation entries={docEntries} setEntries={setDocEntries} currentUser={currentUser} />
-            )}
+              {activeTab === Tab.RETENTION && (
+                  <RetentionEngine
+                      currentUser={currentUser}
+                      cards={flashcards}
+                      setCards={setFlashcards}
+                      onNotify={onNotify}
+                  />
+              )}
 
-            {activeTab === Tab.ANALYST && (
-                <AiAnalyst users={users} logs={logs} modules={modules} scores={scores} capstoneState={capstoneState} />
-            )}
+              {activeTab === Tab.ANALYST && (
+                  <AiAnalyst
+                      users={users}
+                      logs={logs}
+                      modules={modules}
+                      scores={scores}
+                      capstoneState={capstoneState}
+                      onNotify={onNotify}
+                  />
+              )}
 
-            {activeTab === Tab.GUIDE && (
-                <SystemGuide />
-            )}
-          </div>
-        </main>
+              {activeTab === Tab.GUIDE && <SystemGuide />}
+            </div>
+          </main>
+        </div>
 
         <NotificationPanel
             isOpen={isNotifPanelOpen}
@@ -750,77 +795,8 @@ const App: React.FC = () => {
             currentUser={currentUser}
         />
 
-        {/* Settings Modal */}
-        {isSettingsOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-200 dark:border-slate-700">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Workspace Settings</h3>
-                  <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Data Sync Section - NEW */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Data Sync (Collaborate)</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                          onClick={handleExportData}
-                          className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
-                      >
-                        <Download className="w-5 h-5 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Export Backup</span>
-                      </button>
-                      <label className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer group">
-                        <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Smart Sync (Import)</span>
-                        <input
-                            type="file"
-                            accept=".json"
-                            ref={fileInputRef}
-                            onChange={handleImportData}
-                            className="hidden"
-                        />
-                      </label>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-2">
-                      Use 'Smart Sync' to merge your partner's progress without overwriting your own work.
-                    </p>
-                  </div>
-
-                  {/* Danger Zone */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Danger Zone</h4>
-                    <button
-                        onClick={handleResetData}
-                        className="w-full py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded text-sm font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40"
-                    >
-                      Factory Reset Workspace
-                    </button>
-                    <p className="text-[10px] text-rose-400 mt-2">
-                      Use this to clear local data before testing a clean import.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-        )}
       </div>
   );
 };
-
-const NavButton = ({ active, onClick, icon: Icon, label }: any) => (
-    <button
-        onClick={onClick}
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 group ${
-            active
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-        }`}
-    >
-      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
-      <span className={`text-sm font-medium hidden lg:block ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}>{label}</span>
-    </button>
-);
 
 export default App;

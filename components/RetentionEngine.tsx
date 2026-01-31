@@ -2,12 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { User, Flashcard, FlashcardBox } from '../types';
 import { Layers, Plus, Trash, CheckCircle, Eye, Clock, HelpCircle, TrendingUp, BrainCircuit, Target, Activity } from './Icons';
 import { SimpleMarkdown } from './SimpleMarkdown';
-import { generateFlashcards, GeneratedFlashcard } from '../services/geminiService';
+import { generateFlashcards } from '../services/geminiService';
 
 interface RetentionEngineProps {
     currentUser: User;
     cards: Flashcard[];
     setCards: React.Dispatch<React.SetStateAction<Flashcard[]>>;
+    onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
 }
 
 const BOX_INTERVALS: Record<FlashcardBox, number> = {
@@ -18,7 +19,7 @@ const BOX_INTERVALS: Record<FlashcardBox, number> = {
     5: 30  // Review in 1 month
 };
 
-const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, setCards }) => {
+const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, setCards, onNotify }) => {
     const [activeTab, setActiveTab] = useState<'review' | 'manage' | 'add'>('review');
     const [showAnswer, setShowAnswer] = useState(false);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -44,7 +45,7 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
     }, [myCards]);
 
     const stats = useMemo(() => {
-        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<FlashcardBox, number>;
         myCards.forEach(c => {
             counts[c.box] = (counts[c.box] || 0) + 1;
         });
@@ -111,6 +112,7 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
         setNewFront('');
         setNewBack('');
         setNewTags('');
+        onNotify('success', 'Flashcard added successfully');
         setActiveTab('review');
     };
 
@@ -137,16 +139,15 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                 // Batch update state once
                 setCards(prev => [...prev, ...newCards]);
 
-                alert(`Successfully generated ${newCards.length} cards about "${aiTopic}"!`);
+                onNotify('success', `Generated ${newCards.length} cards about "${aiTopic}"!`);
                 setAiTopic('');
                 setActiveTab('review');
             } else {
-                alert("AI could not generate cards. Please try a different topic.");
+                onNotify('error', "AI could not generate cards. Please try a different topic.");
             }
         } catch (err: any) {
-            // Show the actual error message to help debugging (e.g., Missing API Key)
             console.error(err);
-            alert(`AI Error: ${err.message || "Connection failed"}. Check console for details.`);
+            onNotify('error', `AI Error: ${err.message || "Connection failed"}.`);
         } finally {
             setIsGenerating(false);
         }
@@ -155,8 +156,11 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
     const handleDelete = (id: string) => {
         if(confirm("Delete this flashcard?")) {
             setCards(prev => prev.filter(c => c.id !== id));
+            onNotify('info', 'Card deleted');
         }
     };
+
+    // ... (Rest of UI identical, just passing props)
 
     return (
         <div className="space-y-6 animate-fade-in pb-12">

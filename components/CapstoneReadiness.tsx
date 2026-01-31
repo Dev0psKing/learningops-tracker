@@ -9,6 +9,7 @@ interface CapstoneReadinessProps {
   capstoneState: CapstoneState[];
   setCapstoneState: React.Dispatch<React.SetStateAction<CapstoneState[]>>;
   docEntries: DocEntry[];
+  onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
 }
 
 const STATUS_SCORES: Record<ReadinessStatus, number> = {
@@ -19,12 +20,8 @@ const STATUS_SCORES: Record<ReadinessStatus, number> = {
 
 /**
  * CapstoneReadiness Component
- *
- * Tracks readiness for the final project across 5 key dimensions.
- * Features a Radar Chart for visual skill topology and an evidence tracker.
- * Now integrates AI Viva Voce (Mock Oral Exam) for verification.
  */
-const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, capstoneState, setCapstoneState, docEntries }) => {
+const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, capstoneState, setCapstoneState, docEntries, onNotify }) => {
   const [newEvidence, setNewEvidence] = useState<Record<string, string>>({});
   const [showGuide, setShowGuide] = useState(true);
 
@@ -106,7 +103,7 @@ const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, caps
       setInterviewQuestions(questions);
       setInterviewStatus('answering');
     } catch (e: any) {
-      alert(`Failed to generate questions. ${e.message || "Please check connection."}`);
+      onNotify('error', `Failed to generate questions. ${e.message || "Please check connection."}`);
       setIsInterviewOpen(false);
     }
   };
@@ -118,29 +115,34 @@ const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, caps
     setInterviewStatus('evaluating');
     const currentQ = interviewQuestions[currentQuestionIndex];
 
-    const result: EvaluationResult = await evaluateAnswer(currentQ, userAnswer);
+    try {
+      const result: EvaluationResult = await evaluateAnswer(currentQ, userAnswer);
 
-    const historyItem = {
-      q: currentQ,
-      a: userAnswer,
-      feedback: result.feedback,
-      correct: result.isCorrect
-    };
+      const historyItem = {
+        q: currentQ,
+        a: userAnswer,
+        feedback: result.feedback,
+        correct: result.isCorrect
+      };
 
-    const newHistory = [...feedbackHistory, historyItem];
-    setFeedbackHistory(newHistory);
-    setUserAnswer('');
+      const newHistory = [...feedbackHistory, historyItem];
+      setFeedbackHistory(newHistory);
+      setUserAnswer('');
 
-    if (!result.isCorrect) {
-      setInterviewStatus('failed');
-    } else {
-      if (currentQuestionIndex < 2) {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setInterviewStatus('answering');
+      if (!result.isCorrect) {
+        setInterviewStatus('failed');
       } else {
-        setInterviewStatus('passed');
-        completeVerification();
+        if (currentQuestionIndex < 2) {
+          setCurrentQuestionIndex(prev => prev + 1);
+          setInterviewStatus('answering');
+        } else {
+          setInterviewStatus('passed');
+          completeVerification();
+        }
       }
+    } catch (err: any) {
+      onNotify('error', "Failed to evaluate answer. Please try again.");
+      setInterviewStatus('answering');
     }
   };
 
@@ -159,6 +161,7 @@ const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, caps
         }
       };
     }));
+    onNotify('success', `Verification Passed for ${interviewDim}!`);
   };
 
   const closeInterview = () => {
@@ -186,6 +189,7 @@ const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, caps
       };
     }));
     setNewEvidence(prev => ({ ...prev, [dim]: '' }));
+    onNotify('success', 'Evidence link added');
   };
 
   const handleRemoveEvidence = (dim: ReadinessDimension, index: number) => {

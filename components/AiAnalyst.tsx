@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, StudyLog, WeekModule, WeeklyScore, CapstoneState } from '../types';
-import { generatePerformanceAnalysis, PerformanceAnalysis } from '../services/geminiService.ts';
+import { generatePerformanceAnalysis, PerformanceAnalysis } from '../services/geminiService';
 import { Sparkles, Activity, AlertTriangle, TrendingUp, Target, Cpu, CheckCircle } from './Icons';
 
 interface AiAnalystProps {
@@ -9,9 +9,10 @@ interface AiAnalystProps {
     modules: WeekModule[];
     scores: WeeklyScore[];
     capstoneState: CapstoneState[];
+    onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
 }
 
-const AiAnalyst: React.FC<AiAnalystProps> = ({ users, logs, modules, scores, capstoneState }) => {
+const AiAnalyst: React.FC<AiAnalystProps> = ({ users, logs, modules, scores, capstoneState, onNotify }) => {
     const [selectedUserId, setSelectedUserId] = useState<string>(users[0].id);
     const [analysis, setAnalysis] = useState<PerformanceAnalysis | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +44,18 @@ const AiAnalyst: React.FC<AiAnalystProps> = ({ users, logs, modules, scores, cap
             capstoneReadiness: myCapstone?.dimensions
         };
 
-        // 2. Call AI Service
-        const result = await generatePerformanceAnalysis(payload);
-
-        setAnalysis(result);
-        setLastAnalyzedUser(selectedUserId);
-        setIsLoading(false);
+        try {
+            // 2. Call AI Service
+            const result = await generatePerformanceAnalysis(payload);
+            setAnalysis(result);
+            setLastAnalyzedUser(selectedUserId);
+            onNotify('success', 'Analysis generated successfully');
+        } catch (e: any) {
+            console.error(e);
+            onNotify('error', `Analysis failed: ${e.message}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
