@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { User, Flashcard, FlashcardBox } from '../types';
-import { Layers, Plus, Trash, CheckCircle, Eye, Clock, HelpCircle, TrendingUp, BrainCircuit, Target } from './Icons';
+import { Layers, Plus, Trash, CheckCircle, Eye, Clock, HelpCircle, TrendingUp, BrainCircuit, Target, Activity } from './Icons';
 import { SimpleMarkdown } from './SimpleMarkdown';
+import { generateFlashcards, GeneratedFlashcard } from '../services/geminiService';
 
 interface RetentionEngineProps {
     currentUser: User;
@@ -24,9 +25,14 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
     const [showGuide, setShowGuide] = useState(true);
 
     // Add Form State
+    const [addMode, setAddMode] = useState<'manual' | 'ai'>('manual');
     const [newFront, setNewFront] = useState('');
     const [newBack, setNewBack] = useState('');
     const [newTags, setNewTags] = useState('');
+
+    // AI State
+    const [aiTopic, setAiTopic] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // --- Logic ---
 
@@ -87,23 +93,63 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
         setCurrentCardIndex(0);
     };
 
-    const handleAddCard = (e: React.FormEvent) => {
+    const handleManualAdd = (e: React.FormEvent) => {
         e.preventDefault();
+        const tags = newTags.split(',').map(t => t.trim()).filter(t => t);
+
         const card: Flashcard = {
-            id: `card-${Date.now()}`,
+            id: `card-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             userId: currentUser.id,
             front: newFront,
             back: newBack,
             box: 1,
             nextReviewDate: new Date().toISOString().split('T')[0], // Due immediately
-            tags: newTags.split(',').map(t => t.trim()).filter(t => t),
+            tags,
         };
 
-        setCards([...cards, card]);
+        setCards(prev => [...prev, card]);
         setNewFront('');
         setNewBack('');
         setNewTags('');
-        setActiveTab('review'); // Go back to review to see it
+        setActiveTab('review');
+    };
+
+    const handleAiGenerate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!aiTopic) return;
+
+        setIsGenerating(true);
+        try {
+            const generatedCardsData = await generateFlashcards(aiTopic);
+
+            if (generatedCardsData && generatedCardsData.length > 0) {
+                // Create card objects locally first
+                const newCards: Flashcard[] = generatedCardsData.map((c, index) => ({
+                    id: `card-ai-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+                    userId: currentUser.id,
+                    front: c.front,
+                    back: c.back,
+                    box: 1,
+                    nextReviewDate: new Date().toISOString().split('T')[0],
+                    tags: c.tags
+                }));
+
+                // Batch update state once
+                setCards(prev => [...prev, ...newCards]);
+
+                alert(`Successfully generated ${newCards.length} cards about "${aiTopic}"!`);
+                setAiTopic('');
+                setActiveTab('review');
+            } else {
+                alert("AI could not generate cards. Please try a different topic.");
+            }
+        } catch (err: any) {
+            // Show the actual error message to help debugging (e.g., Missing API Key)
+            console.error(err);
+            alert(`AI Error: ${err.message || "Connection failed"}. Check console for details.`);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleDelete = (id: string) => {
@@ -366,7 +412,7 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
                                     <span className="text-[10px] text-slate-400 flex items-center gap-1 whitespace-nowrap">
                         <Clock className="w-3 h-3" /> {card.nextReviewDate}
                      </span>
-                                    <button onClick={() => handleDelete(card.id)} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                                    <button onClick={() => handleDelete(card.id)} className="text-slate-300 hover:text-rose-500 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors" title="Delete Card">
                                         <Trash className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -379,47 +425,101 @@ const RetentionEngine: React.FC<RetentionEngineProps> = ({ currentUser, cards, s
             {/* --- ADD MODE --- */}
             {activeTab === 'add' && (
                 <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Create New Flashcard</h3>
-                    <form onSubmit={handleAddCard} className="space-y-6">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Front (Question / Concept)</label>
-                            <textarea
-                                required
-                                value={newFront}
-                                onChange={e => setNewFront(e.target.value)}
-                                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-32 resize-none font-mono"
-                                placeholder="e.g. What is the difference between inner and left join?"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Back (Answer / Solution)</label>
-                            <textarea
-                                required
-                                value={newBack}
-                                onChange={e => setNewBack(e.target.value)}
-                                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-32 resize-none font-mono"
-                                placeholder="e.g. Inner join returns only matching rows..."
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Tags (Optional)</label>
-                            <input
-                                type="text"
-                                value={newTags}
-                                onChange={e => setNewTags(e.target.value)}
-                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm outline-none"
-                                placeholder="SQL, Pandas, Basics..."
-                            />
-                        </div>
-
-                        <div className="flex justify-end pt-4">
-                            <button type="submit" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-lg transition-colors">
-                                Add to Deck
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New Flashcard</h3>
+                        {/* Mode Switcher */}
+                        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+                            <button
+                                onClick={() => setAddMode('manual')}
+                                className={`px-3 py-1.5 text-xs font-bold rounded ${addMode === 'manual' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                Manual
+                            </button>
+                            <button
+                                onClick={() => setAddMode('ai')}
+                                className={`px-3 py-1.5 text-xs font-bold rounded flex items-center gap-1 ${addMode === 'ai' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                <BrainCircuit className="w-3 h-3" /> AI Generate
                             </button>
                         </div>
-                    </form>
+                    </div>
+
+                    {addMode === 'manual' ? (
+                        <form onSubmit={handleManualAdd} className="space-y-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Front (Question / Concept)</label>
+                                <textarea
+                                    required
+                                    value={newFront}
+                                    onChange={e => setNewFront(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-32 resize-none font-mono"
+                                    placeholder="e.g. What is the difference between inner and left join?"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Back (Answer / Solution)</label>
+                                <textarea
+                                    required
+                                    value={newBack}
+                                    onChange={e => setNewBack(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-32 resize-none font-mono"
+                                    placeholder="e.g. Inner join returns only matching rows..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Tags (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={newTags}
+                                    onChange={e => setNewTags(e.target.value)}
+                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded text-sm outline-none"
+                                    placeholder="SQL, Pandas, Basics..."
+                                />
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <button type="submit" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-lg transition-colors">
+                                    Add to Deck
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                                <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                                    <strong className="block mb-1">AI Flashcard Generator</strong>
+                                    Enter a topic (e.g., "Python List Comprehension" or "SQL Normalization") and the Neural Engine will generate 3 high-quality flashcards for you automatically.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleAiGenerate}>
+                                <div className="mb-6">
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Topic or Concept</label>
+                                    <input
+                                        type="text"
+                                        value={aiTopic}
+                                        onChange={e => setAiTopic(e.target.value)}
+                                        placeholder="e.g. Advanced Tableau Table Calculations"
+                                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded text-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="flex justify-end pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={!aiTopic || isGenerating}
+                                        className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isGenerating ? <Activity className="w-5 h-5 animate-spin"/> : <BrainCircuit className="w-5 h-5"/>}
+                                        {isGenerating ? 'Generating...' : 'Generate Cards'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

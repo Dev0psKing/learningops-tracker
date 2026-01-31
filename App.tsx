@@ -10,8 +10,9 @@ import LandingPage from './components/LandingPage';
 import Documentation from './components/Documentation';
 import SystemGuide from './components/SystemGuide';
 import RetentionEngine from './components/RetentionEngine';
+import AiAnalyst from './components/AiAnalyst';
 import useLocalStorage from './hooks/useLocalStorage';
-import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload, Layers, Database, CheckCircle, AlertTriangle } from './components/Icons';
+import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload, Layers, Database, CheckCircle, AlertTriangle, Sparkles } from './components/Icons';
 import { UserStats, WeekModule, StudyLog, User, Status, WeeklyScore, Notification, TaskItem, JournalEntry, CapstoneState, ReadinessDimensions, ReadinessDimension, Difficulty, DocEntry, Flashcard } from './types';
 
 // --- HELPERS ---
@@ -195,6 +196,7 @@ enum Tab {
   RETENTION = 'retention',
   CAPSTONE = 'capstone',
   DOCUMENTATION = 'documentation',
+  ANALYST = 'analyst',
   GUIDE = 'guide'
 }
 
@@ -607,6 +609,7 @@ const App: React.FC = () => {
             <NavButton active={activeTab === Tab.DOCUMENTATION} onClick={() => setActiveTab(Tab.DOCUMENTATION)} icon={FileText} label="Evidence Log" />
 
             <div className="pt-4 mt-4 border-t border-slate-800">
+              <NavButton active={activeTab === Tab.ANALYST} onClick={() => setActiveTab(Tab.ANALYST)} icon={Sparkles} label="Neural Analyst" />
               <NavButton active={activeTab === Tab.GUIDE} onClick={() => setActiveTab(Tab.GUIDE)} icon={HelpCircle} label="System Guide" />
             </div>
           </nav>
@@ -675,6 +678,7 @@ const App: React.FC = () => {
                 {activeTab === Tab.RETENTION && 'Spaced Repetition'}
                 {activeTab === Tab.CAPSTONE && 'Capstone & Job Readiness'}
                 {activeTab === Tab.DOCUMENTATION && 'Documentation & Evidence'}
+                {activeTab === Tab.ANALYST && 'Neural Performance Analyst'}
                 {activeTab === Tab.GUIDE && 'System Documentation'}
               </h1>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -724,6 +728,10 @@ const App: React.FC = () => {
 
             {activeTab === Tab.DOCUMENTATION && (
                 <Documentation entries={docEntries} setEntries={setDocEntries} currentUser={currentUser} />
+            )}
+
+            {activeTab === Tab.ANALYST && (
+                <AiAnalyst users={users} logs={logs} modules={modules} scores={scores} capstoneState={capstoneState} />
             )}
 
             {activeTab === Tab.GUIDE && (

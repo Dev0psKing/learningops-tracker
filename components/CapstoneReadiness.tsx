@@ -105,8 +105,8 @@ const CapstoneReadiness: React.FC<CapstoneReadinessProps> = ({ currentUser, caps
       const questions = await generateInterviewQuestions(dim);
       setInterviewQuestions(questions);
       setInterviewStatus('answering');
-    } catch (e) {
-      alert("Failed to generate questions. Please check connection.");
+    } catch (e: any) {
+      alert(`Failed to generate questions. ${e.message || "Please check connection."}`);
       setIsInterviewOpen(false);
     }
   };
