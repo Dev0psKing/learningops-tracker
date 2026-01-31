@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
 import Syllabus from './components/Syllabus';
 import Tracker from './components/Tracker';
@@ -11,7 +11,7 @@ import Documentation from './components/Documentation';
 import SystemGuide from './components/SystemGuide';
 import RetentionEngine from './components/RetentionEngine';
 import useLocalStorage from './hooks/useLocalStorage';
-import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload, Layers } from './components/Icons';
+import { LayoutDashboard, BookOpen, Activity, Target, Bell, Notebook, Briefcase, FileText, HelpCircle, Settings, Sun, Moon, Download, Upload, Layers, Database, CheckCircle, AlertTriangle } from './components/Icons';
 import { UserStats, WeekModule, StudyLog, User, Status, WeeklyScore, Notification, TaskItem, JournalEntry, CapstoneState, ReadinessDimensions, ReadinessDimension, Difficulty, DocEntry, Flashcard } from './types';
 
 // --- HELPERS ---
@@ -198,10 +198,16 @@ enum Tab {
   GUIDE = 'guide'
 }
 
+type SystemMessage = {
+  type: 'success' | 'error' | 'info';
+  text: string;
+};
+
 const App: React.FC = () => {
   // --- STATE ---
   const [showLanding, setShowLanding] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
+  const [systemMessage, setSystemMessage] = useState<SystemMessage | null>(null);
 
   // Theme State
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('lo_theme', 'light');
@@ -209,10 +215,7 @@ const App: React.FC = () => {
   // Persisted Data
   const [users, setUsers] = useLocalStorage<User[]>('lo_users', INITIAL_USERS);
   const [currentUserId, setCurrentUserId] = useLocalStorage<string>('lo_current_user_id', INITIAL_USERS[0].id);
-
-  // We used to store 'lo_modules', but changed data structure, so use 'lo_modules_v2'
   const [modules, setModules] = useLocalStorage<WeekModule[]>('lo_modules_v2', INITIAL_MODULES);
-
   const [logs, setLogs] = useLocalStorage<StudyLog[]>('lo_logs', MOCK_LOGS);
   const [scores, setScores] = useLocalStorage<WeeklyScore[]>('lo_scores', MOCK_SCORES);
   const [journalEntries, setJournalEntries] = useLocalStorage<JournalEntry[]>('lo_journal', MOCK_JOURNAL);
@@ -227,6 +230,9 @@ const App: React.FC = () => {
   const [lateTasks, setLateTasks] = useState<TaskItem[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<TaskItem[]>([]);
 
+  // Ref for file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
 
   // --- THEME EFFECT ---
@@ -238,65 +244,165 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  // --- DEMO ACTIONS ---
+  // --- MESSAGE BANNER ---
+  useEffect(() => {
+    if (systemMessage) {
+      const timer = setTimeout(() => setSystemMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [systemMessage]);
+
+  // --- ACTIONS ---
+
   const handleResetData = () => {
-    if (confirm("Reset all data to a clean state (Day 0)? This cannot be undone.")) {
-      localStorage.clear();
-      window.location.reload();
+    if (window.confirm("WARNING: This will delete ALL data and reset the workspace to Day 0. This cannot be undone.")) {
+      try {
+        // 1. Wipe Storage
+        window.localStorage.clear();
+
+        // 2. Reset React State Manually (In case reload fails)
+        setUsers(INITIAL_USERS);
+        setModules(INITIAL_MODULES);
+        setLogs([]);
+        setScores([]);
+        setJournalEntries([]);
+        setCapstoneState(INITIAL_CAPSTONE);
+        setDocEntries([]);
+        setFlashcards([]);
+        setCurrentUserId(INITIAL_USERS[0].id);
+        setShowLanding(true);
+        setIsSettingsOpen(false);
+
+        setSystemMessage({ type: 'success', text: 'Workspace Factory Reset Complete.' });
+
+        // 3. Force Reload to be sure
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (e) {
+        setSystemMessage({ type: 'error', text: 'Reset failed. Please clear browser cache manually.' });
+      }
     }
   };
 
   const handleExportData = () => {
-    const data = {
-      users,
-      modules,
-      logs,
-      scores,
-      journalEntries,
-      capstoneState,
-      docEntries,
-      flashcards,
-      timestamp: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `learningops-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const data = {
+        users,
+        modules,
+        logs,
+        scores,
+        journalEntries,
+        capstoneState,
+        docEntries,
+        flashcards,
+        timestamp: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `learningops-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setSystemMessage({ type: 'success', text: 'Backup exported successfully.' });
+    } catch (e: any) {
+      console.error(e);
+      setSystemMessage({ type: 'error', text: 'Export Failed: ' + e.message });
+    }
   };
 
   const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+
+    // Reset input immediately so same file can be selected again if needed
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
     if (!file) return;
 
     const reader = new FileReader();
+
+    reader.onerror = () => {
+      setSystemMessage({ type: 'error', text: 'Failed to read file.' });
+    };
+
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        // Validate basic structure
-        if (data.users && data.modules) {
-          if(confirm(`Import backup from ${data.timestamp}? This will overwrite current data.`)) {
-            setUsers(data.users);
-            setModules(data.modules);
-            setLogs(data.logs || []);
-            setScores(data.scores || []);
-            setJournalEntries(data.journalEntries || []);
-            setCapstoneState(data.capstoneState || []);
-            setDocEntries(data.docEntries || []);
-            setFlashcards(data.flashcards || []);
-            alert('Data imported successfully!');
-            setIsSettingsOpen(false);
-          }
-        } else {
-          alert('Invalid file format.');
+        const json = e.target?.result as string;
+        const data = JSON.parse(json);
+
+        if (!data.users || !data.modules) {
+          setSystemMessage({ type: 'error', text: 'Invalid file format. Missing core data.' });
+          return;
         }
-      } catch (err) {
+
+        if(window.confirm(`Smart Sync with backup from ${new Date(data.timestamp).toLocaleString()}? \n\nThis will combine the other user's progress with yours. Your own local progress will be preserved.`)) {
+
+          // Helper: User-Centric Merge
+          const mergeUserData = <T extends { id: string, userId: string }>(local: T[], incoming: T[] = [], myId: string): T[] => {
+            const myLocal = local.filter(l => l.userId === myId);
+            const othersIncoming = incoming.filter(i => i.userId !== myId);
+            const merged = new Map();
+            [...myLocal, ...othersIncoming].forEach(item => merged.set(item.id, item));
+            return Array.from(merged.values());
+          };
+
+          // 1. User Data Merges
+          setLogs(mergeUserData(logs, data.logs, currentUser.id));
+          setScores(mergeUserData(scores, data.scores, currentUser.id));
+          setJournalEntries(mergeUserData(journalEntries, data.journalEntries, currentUser.id));
+          setDocEntries(mergeUserData(docEntries, data.docEntries, currentUser.id));
+          setFlashcards(mergeUserData(flashcards, data.flashcards, currentUser.id));
+
+          // 2. Capstone State Merge
+          const mergedCapstone = [...capstoneState];
+          (data.capstoneState || []).forEach((incState: CapstoneState) => {
+            if (incState.userId !== currentUser.id) {
+              const localIndex = mergedCapstone.findIndex(c => c.userId === incState.userId);
+              if (localIndex === -1) {
+                mergedCapstone.push(incState);
+              } else {
+                mergedCapstone[localIndex] = incState;
+              }
+            }
+          });
+          setCapstoneState(mergedCapstone);
+
+          // 3. Modules & Progress Merge
+          const mergedModules = modules.map(localMod => {
+            const incMod = (data.modules || []).find((m: WeekModule) => m.id === localMod.id);
+            if (!incMod) return localMod;
+
+            const mergedItems = localMod.items.map(localItem => {
+              const incItem = incMod.items.find((i: TaskItem) => i.id === localItem.id);
+              if (!incItem) return localItem;
+
+              const newProgress = { ...incItem.progress };
+              // Force override my specific key with my local status
+              if (localItem.progress[currentUser.id]) {
+                newProgress[currentUser.id] = localItem.progress[currentUser.id];
+              }
+              return { ...localItem, progress: newProgress };
+            });
+
+            // Add new items
+            incMod.items.forEach((incItem: TaskItem) => {
+              if (!mergedItems.find(i => i.id === incItem.id)) {
+                mergedItems.push(incItem);
+              }
+            });
+
+            return { ...localMod, items: mergedItems };
+          });
+          setModules(mergedModules);
+
+          setSystemMessage({ type: 'success', text: 'Smart Sync Complete! Partner data updated.' });
+          setIsSettingsOpen(false);
+        }
+      } catch (err: any) {
         console.error(err);
-        alert('Failed to parse file.');
+        setSystemMessage({ type: 'error', text: 'Import processing error: ' + err.message });
       }
     };
     reader.readAsText(file);
@@ -468,6 +574,19 @@ const App: React.FC = () => {
 
   return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+
+        {/* --- SYSTEM MESSAGE BANNER --- */}
+        {systemMessage && (
+            <div className={`fixed top-0 left-0 right-0 z-[100] px-4 py-2 text-center text-sm font-bold shadow-lg animate-fade-in ${
+                systemMessage.type === 'success' ? 'bg-emerald-500 text-white' :
+                    systemMessage.type === 'error' ? 'bg-rose-600 text-white' : 'bg-blue-500 text-white'
+            }`}>
+              {systemMessage.type === 'success' && <CheckCircle className="w-4 h-4 inline mr-2 -mt-0.5" />}
+              {systemMessage.type === 'error' && <AlertTriangle className="w-4 h-4 inline mr-2 -mt-0.5" />}
+              {systemMessage.text}
+            </div>
+        )}
+
         {/* Sidebar - Updated with scroll and responsive footer */}
         <aside className="w-20 lg:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col fixed inset-y-0 z-10 transition-all duration-300 border-r border-slate-800 overflow-y-auto">
           <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => setShowLanding(true)}>
@@ -646,49 +765,34 @@ const App: React.FC = () => {
                       </button>
                       <label className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer group">
                         <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Import Data</span>
-                        <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Smart Sync (Import)</span>
+                        <input
+                            type="file"
+                            accept=".json"
+                            ref={fileInputRef}
+                            onChange={handleImportData}
+                            className="hidden"
+                        />
                       </label>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-2">
-                      Use this to share progress between computers. Export from one, import to the other.
+                      Use 'Smart Sync' to merge your partner's progress without overwriting your own work.
                     </p>
                   </div>
 
-                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Team Members</h4>
-                    <div className="space-y-4">
-                      {users.map((u, idx) => (
-                          <div key={u.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${u.color}`}>
-                              {u.avatarInitials}
-                            </div>
-                            <input
-                                type="text"
-                                value={u.name}
-                                onChange={(e) => {
-                                  const newUsers = [...users];
-                                  newUsers[idx] = {
-                                    ...u,
-                                    name: e.target.value,
-                                    avatarInitials: e.target.value.substring(0, 2).toUpperCase()
-                                  };
-                                  setUsers(newUsers);
-                                }}
-                                className="flex-1 px-2 py-1 border-b border-transparent focus:border-indigo-500 bg-transparent text-sm text-slate-900 dark:text-white outline-none"
-                            />
-                          </div>
-                      ))}
-                    </div>
+                  {/* Danger Zone */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Danger Zone</h4>
+                    <button
+                        onClick={handleResetData}
+                        className="w-full py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded text-sm font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40"
+                    >
+                      Factory Reset Workspace
+                    </button>
+                    <p className="text-[10px] text-rose-400 mt-2">
+                      Use this to clear local data before testing a clean import.
+                    </p>
                   </div>
-                </div>
-                <div className="mt-6 flex justify-end">
-                  <button
-                      onClick={() => setIsSettingsOpen(false)}
-                      className="px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    Done
-                  </button>
                 </div>
               </div>
             </div>
@@ -700,14 +804,14 @@ const App: React.FC = () => {
 const NavButton = ({ active, onClick, icon: Icon, label }: any) => (
     <button
         onClick={onClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 group ${
             active
                 ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
         }`}
     >
-      <Icon className="w-5 h-5" />
-      <span className="hidden lg:block font-medium">{label}</span>
+      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
+      <span className={`text-sm font-medium hidden lg:block ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}>{label}</span>
     </button>
 );
 
