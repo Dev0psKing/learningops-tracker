@@ -126,6 +126,7 @@ export type ReadinessDimension = typeof ReadinessDimensions[number];
 export interface DimensionData {
   status: ReadinessStatus;
   evidence: string[]; // List of URLs/Notes
+  verified?: boolean; // AI Verification Status
 }
 
 export interface CapstoneState {
